@@ -8,6 +8,7 @@ public class Material {
     private Vector3f color;
     private float reflectance;
     private Texture texture;
+    private Texture normalMap;
 
     public Material()
     {
@@ -35,7 +36,7 @@ public class Material {
         this.reflectance = reflectance;
     }
 
-    public Vector3f getColor()
+    public Vector3f getColour()
     {
         return color;
     }
@@ -68,5 +69,20 @@ public class Material {
     public void setTexture(Texture texture)
     {
         this.texture = texture;
+    }
+
+    public boolean hasNormalMap()
+    {
+        return this.normalMap != null;
+    }
+
+    public Texture getNormalMap()
+    {
+        return normalMap;
+    }
+
+    public void setNormalMap(Texture normalMap)
+    {
+        this.normalMap = normalMap;
     }
 }

@@ -6,7 +6,9 @@ import de.matthiasmann.twl.utils.PNGDecoder.Format;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import static org.lwjgl.opengl.GL11.*;
+import static org.lwjgl.opengl.GL12.GL_CLAMP_TO_EDGE;
 import static org.lwjgl.opengl.GL30.glGenerateMipmap;
+import static org.lwjgl.opengl.GL30.glTexParameterIi;
 
 public class Texture {
 
@@ -17,6 +19,20 @@ public class Texture {
     public Texture(String fileName) throws Exception
     {
         this(Texture.class.getResourceAsStream(fileName));
+    }
+
+    public Texture(int width, int height, int pixelFormat) throws Exception
+    {
+        this.id = glGenTextures();
+        this.width = width;
+        this.height = height;
+
+        glBindTexture(GL_TEXTURE_2D, this.id);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, this.width, this.height, 0, pixelFormat, GL_FLOAT, (ByteBuffer) null);
+        glTexParameterIi(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameterIi(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameterIi(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameterIi(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     }
 
     public Texture(InputStream is) throws Exception

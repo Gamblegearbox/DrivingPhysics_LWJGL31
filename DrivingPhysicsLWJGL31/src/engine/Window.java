@@ -105,8 +105,6 @@ public class Window {
 
         GL.createCapabilities();
 
-        // Set the clear color
-        glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
     }
 
     public long getWindowHandle()

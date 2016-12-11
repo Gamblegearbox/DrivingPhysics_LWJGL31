@@ -1,26 +1,35 @@
 package engine.graphics;
 
-
 import engine.*;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 
+import java.util.List;
+import java.util.Map;
+
 import static org.lwjgl.opengl.GL11.*;
+import static org.lwjgl.opengl.GL13.GL_TEXTURE2;
+import static org.lwjgl.opengl.GL13.glActiveTexture;
+import static org.lwjgl.opengl.GL30.GL_FRAMEBUFFER;
+import static org.lwjgl.opengl.GL30.glBindFramebuffer;
 
 public class Renderer {
 
+
     private static final float FOV = (float) Math.toRadians(60.0f);
     private static final float Z_NEAR = 0.01f;
-    private static final float Z_FAR = 1000.0f;
-
+    private static final float Z_FAR = 1000.f;
     private static final int MAX_POINT_LIGHTS = 5;
     private static final int MAX_SPOT_LIGHTS = 5;
 
-    private Transformation transformation;
-    private ShaderProgram shaderProgram;
+    private final Transformation transformation;
+    private final float specularPower;
+
+    private ShadowMap shadowMap;
+    private ShaderProgram depthShaderProgram;
+    private ShaderProgram sceneShaderProgram;
     private ShaderProgram hudShaderProgram;
-    private float specularPower;
 
 
     public Renderer()
@@ -29,62 +38,99 @@ public class Renderer {
         specularPower = 10f;
     }
 
-    public void init() throws Exception
+    public void init(Window window) throws Exception
     {
+        shadowMap = new ShadowMap();
+
         setupOpenGL();
+        setupDepthShader();
         setupSceneShader();
-        setupHUDShader();
+        setupHudShader();
+    }
+
+    public void render(Window window, Camera camera, Scene scene, IHud hud)
+    {
+        clear();
+
+        // Render depth map before view ports has been set up
+        renderDepthMap(window, camera, scene);
+
+        glViewport(0, 0, window.getWidth(), window.getHeight());
+
+        // Update projection and view matrices once per render cycle
+        transformation.updateProjectionMatrix(FOV, window.getWidth(), window.getHeight(), Z_NEAR, Z_FAR);
+        transformation.updateViewMatrix(camera);
+
+        renderScene(window, camera, scene);
+        renderHud(window, hud);
+
+        //renderAxes(camera);
     }
 
     private void setupOpenGL()
     {
+        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glEnable(GL_DEPTH_TEST);
+        //glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
 
-        glEnable(GL_CULL_FACE);
-        glCullFace(GL_BACK);
-
+        // Support for transparencies
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-        //glPolygonMode( GL_FRONT_AND_BACK, GL_LINE ); // draw as wireframe
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_BACK);
     }
 
-    private void setupSceneShader()throws Exception
+    private void setupDepthShader() throws Exception
     {
-        shaderProgram = new ShaderProgram();
-        shaderProgram.createVertexShader(Utils.loadResource("/shaders/vertex.vs"));
-        shaderProgram.createFragmentShader(Utils.loadResource("/shaders/fragment.fs"));
-        shaderProgram.link();
+        depthShaderProgram = new ShaderProgram();
+        depthShaderProgram.createVertexShader(Utils.loadResource("/shaders/depth.vs"));
+        depthShaderProgram.createFragmentShader(Utils.loadResource("/shaders/depth.fs"));
+        depthShaderProgram.link();
 
-        shaderProgram.createUniform("projectionMatrix");
-        shaderProgram.createUniform("modelViewMatrix");
-        shaderProgram.createUniform("texture_sampler");
-
-        shaderProgram.createMaterialUniform("material");
-
-        shaderProgram.createUniform("specularPower");
-        shaderProgram.createUniform("ambientLight");
-        shaderProgram.createPointLightListUniform("pointLights", MAX_POINT_LIGHTS);
-        shaderProgram.createSpotLightListUniform("spotLights", MAX_SPOT_LIGHTS);
-        shaderProgram.createDirectionalLightUniform("directionalLight");
+        depthShaderProgram.createUniform("orthoProjectionMatrix");
+        depthShaderProgram.createUniform("modelLightViewMatrix");
     }
 
-    private void setupHUDShader() throws Exception
+    private void setupSceneShader() throws Exception
+    {
+        // Create shader
+        sceneShaderProgram = new ShaderProgram();
+        sceneShaderProgram.createVertexShader(Utils.loadResource("/shaders/scene.vs"));
+        sceneShaderProgram.createFragmentShader(Utils.loadResource("/shaders/scene.fs"));
+        sceneShaderProgram.link();
+
+        // Create uniforms for modelView and projection matrices
+        sceneShaderProgram.createUniform("projectionMatrix");
+        sceneShaderProgram.createUniform("modelViewMatrix");
+        sceneShaderProgram.createUniform("texture_sampler");
+        sceneShaderProgram.createUniform("normalMap");
+        // Create uniform for material
+        sceneShaderProgram.createMaterialUniform("material");
+        // Create lighting related uniforms
+        sceneShaderProgram.createUniform("specularPower");
+        sceneShaderProgram.createUniform("ambientLight");
+        sceneShaderProgram.createPointLightListUniform("pointLights", MAX_POINT_LIGHTS);
+        sceneShaderProgram.createSpotLightListUniform("spotLights", MAX_SPOT_LIGHTS);
+        sceneShaderProgram.createDirectionalLightUniform("directionalLight");
+
+        // Create uniforms for shadow mapping
+        sceneShaderProgram.createUniform("shadowMap");
+        sceneShaderProgram.createUniform("orthoProjectionMatrix");
+        sceneShaderProgram.createUniform("modelLightViewMatrix");
+    }
+
+    private void setupHudShader() throws Exception
     {
         hudShaderProgram = new ShaderProgram();
-        hudShaderProgram.createVertexShader(Utils.loadResource("/shaders/hud_vertex.vs"));
-        hudShaderProgram.createFragmentShader(Utils.loadResource("/shaders/hud_fragment.fs"));
+        hudShaderProgram.createVertexShader(Utils.loadResource("/shaders/hud.vs"));
+        hudShaderProgram.createFragmentShader(Utils.loadResource("/shaders/hud.fs"));
         hudShaderProgram.link();
 
         // Create uniforms for Ortographic-model projection matrix and base colour
         hudShaderProgram.createUniform("projModelMatrix");
-        hudShaderProgram.createUniform("color");
+        hudShaderProgram.createUniform("colour");
         hudShaderProgram.createUniform("hasTexture");
-    }
-
-    public void setClearColor(float r, float g, float b, float alpha)
-    {
-        glClearColor(r, g, b, alpha);
     }
 
     public void clear()
@@ -92,116 +138,196 @@ public class Renderer {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     }
 
-    public void render(Window window, Camera camera, GameItem[] gameItems, SceneLight sceneLight, IHud hud)
+    private void renderDepthMap(Window window, Camera camera, Scene scene)
     {
-        clear();
+        // Setup view port to match the texture size
+        glBindFramebuffer(GL_FRAMEBUFFER, shadowMap.getDepthMapFBO());
+        glViewport(0, 0, ShadowMap.SHADOW_MAP_WIDTH, ShadowMap.SHADOW_MAP_HEIGHT);
+        glClear(GL_DEPTH_BUFFER_BIT);
 
-        if ( window.isResized() )
+        depthShaderProgram.bind();
+
+        DirectionalLight light = scene.getSceneLight().getDirectionalLight();
+        Vector3f lightDirection = light.getDirection();
+
+        float lightAngleX = (float)Math.toDegrees(Math.acos(lightDirection.z));
+        float lightAngleY = (float)Math.toDegrees(Math.asin(lightDirection.x));
+        float lightAngleZ = 0;
+        Matrix4f lightViewMatrix = transformation.updateLightViewMatrix(new Vector3f(lightDirection).mul(light.getShadowPosMult()), new Vector3f(lightAngleX, lightAngleY, lightAngleZ));
+        DirectionalLight.OrthoCoords orthCoords = light.getOrthoCoords();
+        Matrix4f orthoProjMatrix = transformation.updateOrthoProjectionMatrix(orthCoords.left, orthCoords.right, orthCoords.bottom, orthCoords.top, orthCoords.near, orthCoords.far);
+
+        depthShaderProgram.setUniform("orthoProjectionMatrix", orthoProjMatrix);
+        Map<Mesh, List<GameItem>> mapMeshes = scene.getGameMeshes();
+        for (Mesh mesh : mapMeshes.keySet())
         {
-            glViewport(0, 0, window.getWidth(), window.getHeight());
-            window.setResized(false);
+            mesh.renderList(mapMeshes.get(mesh), (GameItem gameItem) -> {
+                        Matrix4f modelLightViewMatrix = transformation.buildModelViewMatrix(gameItem, lightViewMatrix);
+                        depthShaderProgram.setUniform("modelLightViewMatrix", modelLightViewMatrix);
+                    }
+            );
         }
 
-        renderScene(window, camera, gameItems, sceneLight);
-        renderHud(window, hud);
+        // Unbind
+        depthShaderProgram.unbind();
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
-    public void renderScene(Window window, Camera camera, GameItem[] gameItems, SceneLight sceneLight)
+    public void renderScene(Window window, Camera camera, Scene scene)
     {
-        shaderProgram.bind();
+        sceneShaderProgram.bind();
 
-        Matrix4f projectionMatrix = transformation.getProjectionMatrix(FOV, window.getWidth(), window.getHeight(), Z_NEAR, Z_FAR);
-        shaderProgram.setUniform("projectionMatrix", projectionMatrix);
+        Matrix4f projectionMatrix = transformation.getProjectionMatrix();
+        sceneShaderProgram.setUniform("projectionMatrix", projectionMatrix);
+        Matrix4f orthoProjMatrix = transformation.getOrthoProjectionMatrix();
+        sceneShaderProgram.setUniform("orthoProjectionMatrix", orthoProjMatrix);
+        Matrix4f lightViewMatrix = transformation.getLightViewMatrix();
 
-        Matrix4f viewMatrix = transformation.getViewMatrix(camera);
+        Matrix4f viewMatrix = transformation.getViewMatrix();
 
+        SceneLight sceneLight = scene.getSceneLight();
         renderLights(viewMatrix, sceneLight);
 
-        shaderProgram.setUniform("texture_sampler", 0);
 
-        for(GameItem gameItem : gameItems)
+        sceneShaderProgram.setUniform("texture_sampler", 0);
+        sceneShaderProgram.setUniform("normalMap", 1);
+        sceneShaderProgram.setUniform("shadowMap", 2);
+
+        // Render each mesh with the associated game Items
+        Map<Mesh, List<GameItem>> mapMeshes = scene.getGameMeshes();
+        for (Mesh mesh : mapMeshes.keySet())
         {
-            Mesh mesh = gameItem.getMesh();
-            Matrix4f modelViewMatrix = transformation.getModelViewMatrix(gameItem, viewMatrix);
-            shaderProgram.setUniform("modelViewMatrix", modelViewMatrix);
-
-            shaderProgram.setUniform("material", mesh.getMaterial());
-            mesh.render();
+            sceneShaderProgram.setUniform("material", mesh.getMaterial());
+            glActiveTexture(GL_TEXTURE2);
+            glBindTexture(GL_TEXTURE_2D, shadowMap.getDepthMapTexture().getId());
+            mesh.renderList(mapMeshes.get(mesh), (GameItem gameItem) -> {
+                        Matrix4f modelViewMatrix = transformation.buildModelViewMatrix(gameItem, viewMatrix);
+                        sceneShaderProgram.setUniform("modelViewMatrix", modelViewMatrix);
+                        Matrix4f modelLightViewMatrix = transformation.buildModelLightViewMatrix(gameItem, lightViewMatrix);
+                        sceneShaderProgram.setUniform("modelLightViewMatrix", modelLightViewMatrix);
+                    }
+            );
         }
 
-        shaderProgram.unbind();
-    }
-
-    private void renderHud(Window window, IHud hud)
-    {
-        hudShaderProgram.bind();
-
-        Matrix4f ortho = transformation.getOrthoProjectionMatrix(0, window.getWidth(), window.getHeight(), 0);
-
-        for(GameItem gameItem : hud.getGameItems())
-        {
-            Mesh mesh = gameItem.getMesh();
-            Matrix4f projModelMatrix = transformation.getOrthoProjModelMatrix(gameItem, ortho);
-            hudShaderProgram.setUniform("projModelMatrix", projModelMatrix);
-            hudShaderProgram.setUniform("color", gameItem.getMesh().getMaterial().getColor());
-            hudShaderProgram.setUniform("hasTexture", gameItem.getMesh().getMaterial().isTextured() ? 1 : 0);
-            mesh.render();
-        }
-
-        hudShaderProgram.unbind();
+        sceneShaderProgram.unbind();
     }
 
     private void renderLights(Matrix4f viewMatrix, SceneLight sceneLight)
     {
-        shaderProgram.setUniform("ambientLight", sceneLight.getAmbientLight());
-        shaderProgram.setUniform("specularPower", specularPower);
 
-        //Process Point Lights
+        sceneShaderProgram.setUniform("ambientLight", sceneLight.getAmbientLight());
+        sceneShaderProgram.setUniform("specularPower", specularPower);
+
+        // Process Point Lights
         PointLight[] pointLightList = sceneLight.getPointLightList();
         int numLights = pointLightList != null ? pointLightList.length : 0;
-        for(int i = 0; i < numLights; i++)
-        {
-            PointLight currentPointLight = new PointLight(pointLightList[i]);
-            Vector3f lightPos = currentPointLight.getPosition();
+        for (int i = 0; i < numLights; i++) {
+            // Get a copy of the point light object and transform its position to view coordinates
+            PointLight currPointLight = new PointLight(pointLightList[i]);
+            Vector3f lightPos = currPointLight.getPosition();
             Vector4f aux = new Vector4f(lightPos, 1);
             aux.mul(viewMatrix);
             lightPos.x = aux.x;
             lightPos.y = aux.y;
             lightPos.z = aux.z;
-            shaderProgram.setUniform("pointLights", currentPointLight, i);
+            sceneShaderProgram.setUniform("pointLights", currPointLight, i);
         }
 
-        // Process Spot Lights
+        // Process Spot Ligths
         SpotLight[] spotLightList = sceneLight.getSpotLightList();
         numLights = spotLightList != null ? spotLightList.length : 0;
-        for (int i = 0; i < numLights; i++)
-        {
+        for (int i = 0; i < numLights; i++) {
             // Get a copy of the spot light object and transform its position and cone direction to view coordinates
             SpotLight currSpotLight = new SpotLight(spotLightList[i]);
             Vector4f dir = new Vector4f(currSpotLight.getConeDirection(), 0);
             dir.mul(viewMatrix);
             currSpotLight.setConeDirection(new Vector3f(dir.x, dir.y, dir.z));
+
             Vector3f lightPos = currSpotLight.getPointLight().getPosition();
             Vector4f aux = new Vector4f(lightPos, 1);
             aux.mul(viewMatrix);
             lightPos.x = aux.x;
             lightPos.y = aux.y;
             lightPos.z = aux.z;
-            shaderProgram.setUniform("spotLights", currSpotLight, i);
+
+            sceneShaderProgram.setUniform("spotLights", currSpotLight, i);
         }
 
+        // Get a copy of the directional light object and transform its position to view coordinates
         DirectionalLight currDirLight = new DirectionalLight(sceneLight.getDirectionalLight());
         Vector4f dir = new Vector4f(currDirLight.getDirection(), 0);
         dir.mul(viewMatrix);
         currDirLight.setDirection(new Vector3f(dir.x, dir.y, dir.z));
-        shaderProgram.setUniform("directionalLight", currDirLight);
+        sceneShaderProgram.setUniform("directionalLight", currDirLight);
+    }
+
+    private void renderHud(Window window, IHud hud)
+    {
+        if (hud != null) {
+            hudShaderProgram.bind();
+
+            Matrix4f ortho = transformation.getOrtho2DProjectionMatrix(0, window.getWidth(), window.getHeight(), 0);
+            for (GameItem gameItem : hud.getGameItems()) {
+                Mesh mesh = gameItem.getMesh();
+                // Set ortohtaphic and model matrix for this HUD item
+                Matrix4f projModelMatrix = transformation.buildOrtoProjModelMatrix(gameItem, ortho);
+                hudShaderProgram.setUniform("projModelMatrix", projModelMatrix);
+                hudShaderProgram.setUniform("colour", gameItem.getMesh().getMaterial().getColour());
+                hudShaderProgram.setUniform("hasTexture", gameItem.getMesh().getMaterial().isTextured() ? 1 : 0);
+
+                // Render the mesh for this HUD item
+                mesh.render();
+            }
+
+            hudShaderProgram.unbind();
+        }
+    }
+
+    private void renderAxes(Camera camera)
+    {
+        glPushMatrix();
+        glLoadIdentity();
+        float rotX = camera.getRotation().x;
+        float rotY = camera.getRotation().y;
+        float rotZ = 0;
+        glRotatef(rotX, 1.0f, 0.0f, 0.0f);
+        glRotatef(rotY, 0.0f, 1.0f, 0.0f);
+        glRotatef(rotZ, 0.0f, 0.0f, 1.0f);
+        glLineWidth(2.0f);
+
+        glBegin(GL_LINES);
+        // X Axis
+        glColor3f(1.0f, 0.0f, 0.0f);
+        glVertex3f(0.0f, 0.0f, 0.0f);
+        glVertex3f(1.0f, 0.0f, 0.0f);
+        // Y Axis
+        glColor3f(0.0f, 1.0f, 0.0f);
+        glVertex3f(0.0f, 0.0f, 0.0f);
+        glVertex3f(0.0f, 1.0f, 0.0f);
+        // Z Axis
+        glColor3f(1.0f, 1.0f, 1.0f);
+        glVertex3f(0.0f, 0.0f, 0.0f);
+        glVertex3f(0.0f, 0.0f, 1.0f);
+        glEnd();
+
+        glPopMatrix();
     }
 
     public void cleanup()
     {
-        if (shaderProgram != null)
+        if (shadowMap != null)
         {
-            shaderProgram.cleanup();
+            shadowMap.cleanup();
+        }
+
+        if (depthShaderProgram != null)
+        {
+            depthShaderProgram.cleanup();
+        }
+
+        if (sceneShaderProgram != null)
+        {
+            sceneShaderProgram.cleanup();
         }
 
         if (hudShaderProgram != null)

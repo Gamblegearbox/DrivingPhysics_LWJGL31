@@ -20,10 +20,14 @@ public class Game implements IGameLogic{
     private final Camera camera;
     private final Vector3f cameraIncrement;
 
-    private GameItem[] gameItems;
+    private Scene scene;
+    private GameItem wheelFrontLeft;
+    private GameItem wheelFrontRight;
+    private GameItem wheelRearLeft;
+    private GameItem wheelRearRight;
+
     private Hud hud;
 
-    private SceneLight sceneLight;
     private float directionalLightAngle;
 
     private float wheelSpinSpeed = 0;
@@ -37,16 +41,19 @@ public class Game implements IGameLogic{
         renderer = new Renderer();
         camera = new Camera();
         cameraIncrement = new Vector3f(0, 0, 0);
-        directionalLightAngle = 0;
+        directionalLightAngle = 45;
     }
 
     @Override
     public void init(Window window) throws Exception
     {
-        renderer.init();
-        camera.setPosition(0, 2, 10);
+        renderer.init(window);
+        scene = new Scene();
+
         setupGameItems();
         setupLight();
+
+        camera.setPosition(0, 2, 10);
         setupHUD();
     }
 
@@ -62,8 +69,8 @@ public class Game implements IGameLogic{
         material = new Material(new Vector3f(0.1f, 0.1f, 0.1f), 0.5f);
         mesh = OBJLoader.loadMesh(("/models/Wheel_Sport_FRONT.obj"));
         mesh.setMaterial(material);
-        GameItem wheelFrontLeft = new GameItem(mesh);
-        GameItem wheelFrontRight = new GameItem(mesh);
+        wheelFrontLeft = new GameItem(mesh);
+        wheelFrontRight = new GameItem(mesh);
 
         float frontAxlePos = 2.4f;
         float rearAxlePos = -1.8f;
@@ -77,8 +84,8 @@ public class Game implements IGameLogic{
 
         mesh = OBJLoader.loadMesh(("/models/Wheel_Sport_REAR.obj"));
         mesh.setMaterial(material);
-        GameItem wheelRearLeft = new GameItem(mesh);
-        GameItem wheelRearRight = new GameItem(mesh);
+        wheelRearLeft = new GameItem(mesh);
+        wheelRearRight = new GameItem(mesh);
         wheelRearLeft.setPosition(trackWidth, wheelHeight, rearAxlePos);
         wheelRearLeft.setScale(0.3f);
         wheelRearRight.setPosition(-trackWidth, wheelHeight, rearAxlePos);
@@ -91,14 +98,21 @@ public class Game implements IGameLogic{
         GameItem ground = new GameItem(mesh);
         ground.setPosition(0, 0, 0);
 
-        gameItems = new GameItem[]{ car, ground, wheelFrontLeft, wheelFrontRight, wheelRearLeft, wheelRearRight};
+        scene.setGameItems(new GameItem[]{ car, ground, wheelFrontLeft, wheelFrontRight, wheelRearLeft, wheelRearRight});
     }
 
     private void setupLight()
     {
-        sceneLight = new SceneLight();
+        SceneLight sceneLight = new SceneLight();
         sceneLight.setAmbientLight(new Vector3f(0.1f, 0.1f, 0.1f));
-        sceneLight.setDirectionalLight(new DirectionalLight(new Vector3f(1, 1, 1), new Vector3f(-1, 0, 0), 1f));
+
+        Vector3f lightDirection = new Vector3f(0, 1, 1);
+        DirectionalLight directionalLight = new DirectionalLight(new Vector3f(1, 1, 1), lightDirection, 1f);
+        directionalLight.setShadowPosMult(5);
+        directionalLight.setOrthoCoords(-20.0f, 20.0f, -20.0f, 20.0f, -1.0f, 20.0f);
+
+        sceneLight.setDirectionalLight(directionalLight);
+        scene.setSceneLight(sceneLight);
 
         // Point Light
         /*
@@ -127,7 +141,7 @@ public class Game implements IGameLogic{
 
     private void setupHUD() throws Exception
     {
-        hud = new Hud("Press PAGE_UP / PAGE_DOWN to move the directional light");
+        hud = new Hud("LightAngle: ");
     }
 
     @Override
@@ -178,8 +192,6 @@ public class Game implements IGameLogic{
     @Override
     public void update(float interval, MouseInput mouseInput)
     {
-        camera.movePosition(cameraIncrement.x * interval, cameraIncrement.y * interval, cameraIncrement.z * interval);
-
         if (mouseInput.isRightButtonPressed())
         {
             Vector2f rotVec = mouseInput.getDisplVec();
@@ -188,52 +200,41 @@ public class Game implements IGameLogic{
             hud.rotateCompass(camera.getRotation().y);
         }
 
-        gameItems[2].getRotation().y = currentSteeringAngle;
-        gameItems[3].getRotation().y = currentSteeringAngle;
-        gameItems[4].getRotation().x += wheelSpinSpeed;
-        gameItems[5].getRotation().x += wheelSpinSpeed;
+        camera.movePosition(cameraIncrement.x * interval, cameraIncrement.y * interval, cameraIncrement.z * interval);
 
-        updateLight();
-    }
+        DirectionalLight directionalLight = scene.getSceneLight().getDirectionalLight();
 
-    private void updateLight()
-    {
-        DirectionalLight directionalLight = sceneLight.getDirectionalLight();
-        float absDirectionalAngle = Math.abs(directionalLightAngle);
+        float zValue = (float)Math.cos(Math.toRadians(directionalLightAngle));
+        float yValue = (float)Math.sin(Math.toRadians(directionalLightAngle));
+        Vector3f lightDirection = this.scene.getSceneLight().getDirectionalLight().getDirection();
+        lightDirection.x = 0;
+        lightDirection.y = yValue;
+        lightDirection.z = zValue;
+        lightDirection.normalize();
+        float lightAngle = (float)Math.toDegrees(Math.acos(lightDirection.z));
+        hud.setStatusText("LightAngle: " + lightAngle);
+
+        float absDirectionalAngle = Math.abs(directionalLightAngle - 90);
 
         if (absDirectionalAngle > 90)
         {
             isNight = !isNight;
-            if(directionalLightAngle > 90)
+            if(directionalLightAngle > 180)
             {
-                directionalLightAngle = -89.9f;
+                directionalLightAngle = 0;
             }
-            else
+            else if(directionalLightAngle < 0)
             {
-                directionalLightAngle = 89.9f;
+                directionalLightAngle = 180;
             }
         }
 
-        calcLightIntensity(absDirectionalAngle,directionalLight);
-        calcLightColor(absDirectionalAngle, directionalLight);
-        setSkyColor(absDirectionalAngle);
-
-        double angRad = Math.toRadians(directionalLightAngle);
-        directionalLight.getDirection().x = (float) Math.sin(angRad);
-        directionalLight.getDirection().y = (float) Math.cos(angRad);
-    }
-
-    private void calcLightIntensity(float absDirectionalAngle, DirectionalLight directionalLight)
-    {
         if (absDirectionalAngle > 80f)
         {
             float currentIntensity = 1 - (absDirectionalAngle - 80f) / 10.0f;
             directionalLight.setIntensity(currentIntensity);
         }
-    }
 
-    private void calcLightColor(float absDirectionalAngle, DirectionalLight directionalLight)
-    {
         if (absDirectionalAngle > 70f && !isNight)
         {
             float r = 1;
@@ -262,37 +263,26 @@ public class Game implements IGameLogic{
                 directionalLight.getColor().z = 1;
             }
         }
+
+        wheelFrontLeft.getRotation().y = currentSteeringAngle;
+        wheelFrontRight.getRotation().y = currentSteeringAngle;
+        wheelRearLeft.getRotation().x += wheelSpinSpeed;
+        wheelRearRight.getRotation().x += wheelSpinSpeed;
     }
 
-    private void setSkyColor(float absDirectionalAngle)
-    {
-        if(isNight)
-        {
-            renderer.setClearColor(0.0f, 0.0f, 0.0f, 1f);
-        }
-        else
-        {
-//          renderer.setClearColor(0.5f, 0.7f, 1f, 1f);
-            renderer.setClearColor(0.0f, 0.0f, 0.0f, 1f);
-
-        }
-    }
 
     @Override
     public void render(Window window)
     {
         hud.updateSize(window);
-        renderer.render(window, camera, gameItems, sceneLight, hud);
+        renderer.render(window, camera, scene, hud);
     }
 
     @Override
     public void cleanup()
     {
         renderer.cleanup();
-        for (GameItem gameItem : gameItems)
-        {
-            gameItem.getMesh().cleanUp();
-        }
+        scene.cleanup();
         hud.cleanup();
     }
 
