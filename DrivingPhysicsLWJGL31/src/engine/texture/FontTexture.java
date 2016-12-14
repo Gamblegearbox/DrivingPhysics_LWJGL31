@@ -1,4 +1,4 @@
-package engine.graphics;
+package engine.texture;
 
 import java.awt.Color;
 import java.awt.Font;

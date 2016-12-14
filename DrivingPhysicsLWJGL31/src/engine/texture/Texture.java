@@ -1,4 +1,4 @@
-package engine.graphics;
+package engine.texture;
 
 import de.matthiasmann.twl.utils.PNGDecoder;
 import de.matthiasmann.twl.utils.PNGDecoder.Format;

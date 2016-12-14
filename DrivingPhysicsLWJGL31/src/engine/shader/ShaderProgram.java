@@ -1,5 +1,9 @@
-package engine.graphics;
+package engine.shader;
 
+import engine.Material;
+import engine.light.DirectionalLight;
+import engine.light.PointLight;
+import engine.light.SpotLight;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.lwjgl.BufferUtils;

@@ -1,11 +1,10 @@
-package engine.graphics;
+package engine;
 
-import engine.GameItem;
+import engine.gameItem.GameItem;
+import engine.texture.Texture;
 import org.joml.Vector3f;
 import org.lwjgl.BufferUtils;
-import org.lwjgl.opengl.GLXStereoNotifyEventEXT;
 
-import javax.xml.soap.Text;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.ArrayList;

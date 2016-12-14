@@ -2,37 +2,41 @@ package game;
 
 import engine.*;
 import engine.Window;
-import engine.graphics.*;
+import engine.car.Car;
+import engine.gameItem.GameItem;
+import engine.light.DirectionalLight;
+import engine.light.SceneLight;
 import org.joml.Math;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
-
-import java.awt.*;
 
 import static org.lwjgl.glfw.GLFW.*;
 
 public class Game implements IGameLogic{
 
     private static final float MOUSE_SENSITIVITY = 0.2f;
-    private static final float MAX_STEERING_ANGLE = 35f;
 
     private final Renderer renderer;
     private final Camera camera;
     private final Vector3f cameraIncrement;
 
+    private Car car;
+    private Vector3f lightDirection;
     private Scene scene;
+    private GameItem carBody;
     private GameItem wheelFrontLeft;
     private GameItem wheelFrontRight;
     private GameItem wheelRearLeft;
     private GameItem wheelRearRight;
-
     private Hud hud;
 
     private float directionalLightAngle;
 
-    private float wheelSpinSpeed = 0;
-    private float currentSteeringAngle = 0;
-    private float steeringSpeed = 1;
+    private float throttleInput = 0;
+    private float brakeInput = 0;
+    private float steeringInput = 0;
+    private float handbrakeInput = 0;
+    private int gear = 0;
     private boolean isNight = false;
 
 
@@ -49,6 +53,7 @@ public class Game implements IGameLogic{
     {
         renderer.init(window);
         scene = new Scene();
+        car = new Car();
 
         setupGameItems();
         setupLight();
@@ -62,9 +67,9 @@ public class Game implements IGameLogic{
         Mesh mesh = OBJLoader.loadMesh("/models/CustomCorvetteC2_V2.obj");
         Material material = new Material(new Vector3f(0.5f, 0.5f, 0.5f), 1f);
         mesh.setMaterial(material);
-        GameItem car = new GameItem(mesh);
-        car.setPosition(0, 1, 0);
-        car.setScale(0.3f);
+        carBody = new GameItem(mesh);
+        carBody.setPosition(0, 1, 0);
+        carBody.setScale(0.3f);
 
         material = new Material(new Vector3f(0.1f, 0.1f, 0.1f), 0.5f);
         mesh = OBJLoader.loadMesh(("/models/Wheel_Sport_FRONT.obj"));
@@ -98,7 +103,7 @@ public class Game implements IGameLogic{
         GameItem ground = new GameItem(mesh);
         ground.setPosition(0, 0, 0);
 
-        scene.setGameItems(new GameItem[]{ car, ground, wheelFrontLeft, wheelFrontRight, wheelRearLeft, wheelRearRight});
+        scene.setGameItems(new GameItem[]{carBody, ground, wheelFrontLeft, wheelFrontRight, wheelRearLeft, wheelRearRight});
     }
 
     private void setupLight()
@@ -106,7 +111,7 @@ public class Game implements IGameLogic{
         SceneLight sceneLight = new SceneLight();
         sceneLight.setAmbientLight(new Vector3f(0.1f, 0.1f, 0.1f));
 
-        Vector3f lightDirection = new Vector3f(0, 1, 1);
+        lightDirection = new Vector3f(0, 1, 1);
         DirectionalLight directionalLight = new DirectionalLight(new Vector3f(1, 1, 1), lightDirection, 1f);
         directionalLight.setShadowPosMult(5);
         directionalLight.setOrthoCoords(-20.0f, 20.0f, -20.0f, 20.0f, -1.0f, 20.0f);
@@ -163,34 +168,81 @@ public class Game implements IGameLogic{
         else if(window.isKeyPressed(GLFW_KEY_2)) { directionalLightAngle -= 0.5f;}
 
 
-        if (window.isKeyPressed(GLFW_KEY_UP))
+        if(window.isKeyPressed(GLFW_KEY_X))
         {
-            wheelSpinSpeed--;
-        }
-        else if (window.isKeyPressed(GLFW_KEY_DOWN))
-        {
-            wheelSpinSpeed++;
+            if(car.isEngineRunning())
+            {
+                car.stopEngine();
+            }
+            else
+            {
+                car.startEngine();
+            }
         }
 
+        if (window.isKeyPressed(GLFW_KEY_UP))
+        {
+            throttleInput += 0.01f;
+            if(throttleInput > 1.0f)
+            {
+                throttleInput = 1.0f;
+            }
+        }
+        else
+        {
+            throttleInput = 0;
+        }
+
+        if (window.isKeyPressed(GLFW_KEY_DOWN))
+        {
+            brakeInput += 0.01f;
+            if(brakeInput > 1.0f)
+            {
+                brakeInput = 1.0f;
+            }
+        }
+        else
+        {
+            brakeInput = 0;
+        }
 
         if (window.isKeyPressed(GLFW_KEY_LEFT))
         {
-            if(currentSteeringAngle > -MAX_STEERING_ANGLE)
+            steeringInput += 0.01f;
+            if(steeringInput > 1.0f)
             {
-                currentSteeringAngle -= steeringSpeed;
+                steeringInput = 1.0f;
             }
         }
         else if (window.isKeyPressed(GLFW_KEY_RIGHT))
         {
-            if(currentSteeringAngle < MAX_STEERING_ANGLE)
+            steeringInput -= 0.01f;
+            if(steeringInput < -1.0f)
             {
-                currentSteeringAngle += steeringSpeed;
+                steeringInput = -1.0f;
             }
         }
     }
 
     @Override
     public void update(float interval, MouseInput mouseInput)
+    {
+        updateCameraAndCompass(mouseInput, interval);
+        updateDirectionalLight();
+
+        car.update(throttleInput, brakeInput, steeringInput, gear, handbrakeInput);
+
+        float temp = car.getCurrentSteeringAngle();
+        wheelFrontLeft.getRotation().y = temp;
+        wheelFrontRight.getRotation().y = temp;
+
+        wheelRearLeft.getRotation().x -= car.getCurrentEngineRpm() * interval;
+        wheelRearRight.getRotation().x -= car.getCurrentEngineRpm() * interval;
+
+        hud.setStatusText("Steering: " + steeringInput + " / Throttle: " + throttleInput + " / Brake: " + brakeInput);
+    }
+
+    private void updateCameraAndCompass(MouseInput mouseInput, float interval)
     {
         if (mouseInput.isRightButtonPressed())
         {
@@ -199,20 +251,24 @@ public class Game implements IGameLogic{
 
             hud.rotateCompass(camera.getRotation().y);
         }
-
         camera.movePosition(cameraIncrement.x * interval, cameraIncrement.y * interval, cameraIncrement.z * interval);
+    }
 
+    private void updateDirectionalLight()
+    {
         DirectionalLight directionalLight = scene.getSceneLight().getDirectionalLight();
 
         float zValue = (float)Math.cos(Math.toRadians(directionalLightAngle));
         float yValue = (float)Math.sin(Math.toRadians(directionalLightAngle));
-        Vector3f lightDirection = this.scene.getSceneLight().getDirectionalLight().getDirection();
+
         lightDirection.x = 0;
         lightDirection.y = yValue;
         lightDirection.z = zValue;
         lightDirection.normalize();
-        float lightAngle = (float)Math.toDegrees(Math.acos(lightDirection.z));
-        hud.setStatusText("LightAngle: " + lightAngle);
+
+        scene.getSceneLight().getDirectionalLight().setDirection(lightDirection);
+        //float lightAngle = (float)Math.toDegrees(Math.acos(lightDirection.z));
+        //hud.setStatusText("LightAngle: " + lightAngle);
 
         float absDirectionalAngle = Math.abs(directionalLightAngle - 90);
 
@@ -263,13 +319,7 @@ public class Game implements IGameLogic{
                 directionalLight.getColor().z = 1;
             }
         }
-
-        wheelFrontLeft.getRotation().y = currentSteeringAngle;
-        wheelFrontRight.getRotation().y = currentSteeringAngle;
-        wheelRearLeft.getRotation().x += wheelSpinSpeed;
-        wheelRearRight.getRotation().x += wheelSpinSpeed;
     }
-
 
     @Override
     public void render(Window window)

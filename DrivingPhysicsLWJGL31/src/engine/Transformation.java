@@ -1,10 +1,8 @@
-package engine.graphics;
+package engine;
 
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
-import engine.GameItem;
-
-import java.util.Vector;
+import engine.gameItem.GameItem;
 
 public class Transformation {
 

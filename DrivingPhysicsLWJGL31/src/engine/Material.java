@@ -1,5 +1,6 @@
-package engine.graphics;
+package engine;
 
+import engine.texture.Texture;
 import org.joml.Vector3f;
 
 public class Material {

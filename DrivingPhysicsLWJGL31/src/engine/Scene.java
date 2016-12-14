@@ -1,6 +1,7 @@
 package engine;
 
-import engine.graphics.Mesh;
+import engine.gameItem.GameItem;
+import engine.light.SceneLight;
 
 import java.util.ArrayList;
 import java.util.HashMap;

@@ -1,6 +1,11 @@
-package engine.graphics;
+package engine;
 
-import engine.*;
+import engine.gameItem.GameItem;
+import engine.light.DirectionalLight;
+import engine.light.PointLight;
+import engine.light.SceneLight;
+import engine.light.SpotLight;
+import engine.shader.ShaderProgram;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;

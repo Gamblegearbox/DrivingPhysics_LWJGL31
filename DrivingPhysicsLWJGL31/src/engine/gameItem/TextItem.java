@@ -1,9 +1,9 @@
-package engine;
+package engine.gameItem;
 
-import engine.graphics.FontTexture;
-import engine.graphics.Material;
-import engine.graphics.Mesh;
-import engine.graphics.Texture;
+import engine.Utils;
+import engine.Material;
+import engine.Mesh;
+import engine.texture.Texture;
 
 import java.nio.charset.Charset;
 import java.util.ArrayList;

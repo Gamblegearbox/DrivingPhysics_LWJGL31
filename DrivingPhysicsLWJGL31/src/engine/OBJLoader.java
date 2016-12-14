@@ -1,6 +1,5 @@
-package engine.graphics;
+package engine;
 
-import engine.Utils;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 

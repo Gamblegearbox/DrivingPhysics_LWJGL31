@@ -1,12 +1,12 @@
 package game;
 
-import engine.GameItem;
+import engine.gameItem.GameItem;
 import engine.IHud;
-import engine.TextItem;
+import engine.gameItem.TextItem;
 import engine.Window;
-import engine.graphics.Material;
-import engine.graphics.Mesh;
-import engine.graphics.OBJLoader;
+import engine.Material;
+import engine.Mesh;
+import engine.OBJLoader;
 import org.joml.Vector3f;
 
 

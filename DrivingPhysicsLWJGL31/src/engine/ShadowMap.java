@@ -1,5 +1,7 @@
-package engine.graphics;
+package engine;
 
+
+import engine.texture.Texture;
 
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL30.*;
