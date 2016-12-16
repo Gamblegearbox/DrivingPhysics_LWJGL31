@@ -19,7 +19,10 @@ public class Car {
 
     public void update(float throttleInput, float brakeInput, float steeringInput, int gear, float handbrake)
     {
-
+        if(Math.abs(currentSteeringAngle) <= maxSteeringAngle)
+        {
+            currentSteeringAngle = maxSteeringAngle * steeringInput;
+        }
     }
 
     public void startEngine()

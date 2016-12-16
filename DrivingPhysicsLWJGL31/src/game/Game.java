@@ -15,6 +15,11 @@ import static org.lwjgl.glfw.GLFW.*;
 public class Game implements IGameLogic{
 
     private static final float MOUSE_SENSITIVITY = 0.2f;
+    private static final float INPUT_PEDAL_INCREASE = 0.025f;
+    private static final float INPUT_PEDAL_DECREASE = 0.05f;
+    private static final float INPUT_STEERING_SPEED = 0.02f;
+    private static final float INPUT_MAX_VALUE = 1.0f;
+
 
     private final Renderer renderer;
     private final Camera camera;
@@ -182,44 +187,52 @@ public class Game implements IGameLogic{
 
         if (window.isKeyPressed(GLFW_KEY_UP))
         {
-            throttleInput += 0.01f;
-            if(throttleInput > 1.0f)
+            throttleInput += INPUT_PEDAL_INCREASE;
+            if(throttleInput > INPUT_MAX_VALUE)
             {
-                throttleInput = 1.0f;
+                throttleInput = INPUT_MAX_VALUE;
             }
         }
         else
         {
-            throttleInput = 0;
+            throttleInput -= INPUT_PEDAL_DECREASE;
+            if(throttleInput < 0f)
+            {
+                throttleInput = 0f;
+            }
         }
 
         if (window.isKeyPressed(GLFW_KEY_DOWN))
         {
-            brakeInput += 0.01f;
-            if(brakeInput > 1.0f)
+            brakeInput += INPUT_PEDAL_INCREASE;
+            if(brakeInput > INPUT_MAX_VALUE)
             {
-                brakeInput = 1.0f;
+                brakeInput = INPUT_MAX_VALUE;
             }
         }
         else
         {
-            brakeInput = 0;
+            brakeInput -= INPUT_PEDAL_DECREASE;
+            if(brakeInput < 0.0f)
+            {
+                brakeInput = 0.0f;
+            }
         }
 
         if (window.isKeyPressed(GLFW_KEY_LEFT))
         {
-            steeringInput += 0.01f;
-            if(steeringInput > 1.0f)
+            steeringInput += INPUT_STEERING_SPEED;
+            if(steeringInput > INPUT_MAX_VALUE)
             {
-                steeringInput = 1.0f;
+                steeringInput = INPUT_MAX_VALUE;
             }
         }
         else if (window.isKeyPressed(GLFW_KEY_RIGHT))
         {
-            steeringInput -= 0.01f;
-            if(steeringInput < -1.0f)
+            steeringInput -= INPUT_STEERING_SPEED;
+            if(steeringInput < -INPUT_MAX_VALUE)
             {
-                steeringInput = -1.0f;
+                steeringInput = -INPUT_MAX_VALUE;
             }
         }
     }
