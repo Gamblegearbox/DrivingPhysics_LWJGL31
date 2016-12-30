@@ -3,8 +3,8 @@ package engine;
 
 public class GameEngine implements Runnable{
 
-    public static final int TARGET_FPS = 75;
-    public static final int TARGET_UPS = 60;
+    public static final int TARGET_FPS = 60;
+    public static final int TARGET_UPS = 75;
 
     private final Window window;
     private final Thread gameLoopThread;

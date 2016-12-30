@@ -92,7 +92,7 @@ public class Game implements IGameLogic{
         wheelFrontRight.setScale(0.3f);
         wheelFrontRight.setRotation(0, 0, 180);
 
-        mesh = OBJLoader.loadMesh(("/models/Wheel_Sport_REAR.obj"));
+        mesh = OBJLoader.loadMesh(("/models/Wheel_Sport_REAR_REF.obj"));
         mesh.setMaterial(material);
         wheelRearLeft = new GameItem(mesh);
         wheelRearRight = new GameItem(mesh);
@@ -153,6 +153,8 @@ public class Game implements IGameLogic{
     {
         hud = new Hud("LightAngle: ");
     }
+
+    int count = 0;
 
     @Override
     public void input(Window window, MouseInput mouseInput)
@@ -235,6 +237,7 @@ public class Game implements IGameLogic{
                 steeringInput = -INPUT_MAX_VALUE;
             }
         }
+
     }
 
     @Override
@@ -246,11 +249,11 @@ public class Game implements IGameLogic{
         car.update(throttleInput, brakeInput, steeringInput, gear, handbrakeInput);
 
         float temp = car.getCurrentSteeringAngle();
-        wheelFrontLeft.getRotation().y = temp;
-        wheelFrontRight.getRotation().y = temp;
+        wheelFrontLeft.getRotation().y = -temp;
+        wheelFrontRight.getRotation().y = -temp;
 
         wheelRearLeft.getRotation().x -= car.getCurrentEngineRpm() * interval;
-        wheelRearRight.getRotation().x -= car.getCurrentEngineRpm() * interval;
+        wheelRearRight.getRotation().x -= 6 * interval; //THIS IS ONE REV PER MIN!! (6 * interval)
 
         hud.setStatusText("Steering: " + steeringInput + " / Throttle: " + throttleInput + " / Brake: " + brakeInput);
     }
