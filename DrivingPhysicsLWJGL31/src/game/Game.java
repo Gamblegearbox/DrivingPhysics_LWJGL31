@@ -69,37 +69,29 @@ public class Game implements IGameLogic{
 
     private void setupGameItems() throws Exception
     {
-        Mesh mesh = OBJLoader.loadMesh("/models/CustomCorvetteC2_V2.obj");
+        float frontAxlePos = 1.55f;
+        float rearAxlePos = -1.45f;
+        float wheelHeight = 0.40f;
+        float trackWidth = 0.867f;
+
+        Mesh mesh = OBJLoader.loadMesh("/models/Car_Offroad.obj");
         Material material = new Material(new Vector3f(0.5f, 0.5f, 0.5f), 1f);
         mesh.setMaterial(material);
         carBody = new GameItem(mesh);
-        carBody.setPosition(0, 1, 0);
-        carBody.setScale(0.3f);
+        carBody.setPosition(0, 0, 0);
 
-        material = new Material(new Vector3f(0.1f, 0.1f, 0.1f), 0.5f);
-        mesh = OBJLoader.loadMesh(("/models/Wheel_Sport_FRONT.obj"));
+        material = new Material(new Vector3f(0.2f, 0.2f, 0.2f), 0.5f);
+        mesh = OBJLoader.loadMesh(("/models/Wheel_Offroad.obj"));
         mesh.setMaterial(material);
         wheelFrontLeft = new GameItem(mesh);
         wheelFrontRight = new GameItem(mesh);
-
-        float frontAxlePos = 2.4f;
-        float rearAxlePos = -1.8f;
-        float wheelHeight = 0.6f;
-        float trackWidth = 1.25f;
-        wheelFrontLeft.setPosition(trackWidth, wheelHeight, frontAxlePos);
-        wheelFrontLeft.setScale(0.3f);
-        wheelFrontRight.setPosition(-trackWidth, wheelHeight, frontAxlePos);
-        wheelFrontRight.setScale(0.3f);
-        wheelFrontRight.setRotation(0, 0, 180);
-
-        mesh = OBJLoader.loadMesh(("/models/Wheel_Sport_REAR_REF.obj"));
-        mesh.setMaterial(material);
         wheelRearLeft = new GameItem(mesh);
         wheelRearRight = new GameItem(mesh);
+        wheelFrontLeft.setPosition(trackWidth, wheelHeight, frontAxlePos);
+        wheelFrontRight.setPosition(-trackWidth, wheelHeight, frontAxlePos);
+        wheelFrontRight.setRotation(0, 0, 180);
         wheelRearLeft.setPosition(trackWidth, wheelHeight, rearAxlePos);
-        wheelRearLeft.setScale(0.3f);
         wheelRearRight.setPosition(-trackWidth, wheelHeight, rearAxlePos);
-        wheelRearRight.setScale(0.3f);
         wheelRearRight.setRotation(0, 0, 180);
 
         material = new Material(new Vector3f(0.5f, 0.5f, 0.5f), 0f);
@@ -108,13 +100,19 @@ public class Game implements IGameLogic{
         GameItem ground = new GameItem(mesh);
         ground.setPosition(0, 0, 0);
 
-        scene.setGameItems(new GameItem[]{carBody, ground, wheelFrontLeft, wheelFrontRight, wheelRearLeft, wheelRearRight});
+        material = new Material(new Vector3f(0.5f, 0.5f, 0.5f), 0f);
+        mesh = OBJLoader.loadMesh("/models/REF_ONE_CUBIC_METER.obj");
+        mesh.setMaterial(material);
+        GameItem oneCubicMeter = new GameItem(mesh);
+        oneCubicMeter.setPosition(0, 0.5f, 0);
+
+        scene.setGameItems(new GameItem[]{carBody, ground, oneCubicMeter, wheelFrontLeft, wheelFrontRight, wheelRearLeft, wheelRearRight});
     }
 
     private void setupLight()
     {
         SceneLight sceneLight = new SceneLight();
-        sceneLight.setAmbientLight(new Vector3f(0.1f, 0.1f, 0.1f));
+        sceneLight.setAmbientLight(new Vector3f(0.2f, 0.2f, 0.2f));
 
         lightDirection = new Vector3f(0, 1, 1);
         DirectionalLight directionalLight = new DirectionalLight(new Vector3f(1, 1, 1), lightDirection, 1f);
@@ -123,38 +121,12 @@ public class Game implements IGameLogic{
 
         sceneLight.setDirectionalLight(directionalLight);
         scene.setSceneLight(sceneLight);
-
-        // Point Light
-        /*
-        PointLight light = new PointLight(
-                new Vector3f(0, 0, 1),
-                new Vector3f(1, 2, 1.5f),
-                1f
-        );
-        light.setAttenuation(new PointLight.Attenuation(0.0f, 0.0f, 1.f));
-        sceneLight.setPointLightList(new PointLight[]{light});
-        */
-        // Spot Light
-        /*
-        light = new PointLight(
-                new Vector3f(0, 1, 0),
-                new Vector3f(5f, 5f, 1),
-                1f
-        );
-        light.setAttenuation(new PointLight.Attenuation(1.0f, 1.0f, 0.2f));
-        Vector3f coneDir = new Vector3f(0, -1f, 0);
-        float cutoff = (float) Math.cos(Math.toRadians(40));
-        SpotLight spotLight0 = new SpotLight(light, coneDir, cutoff);
-        sceneLight.setSpotLightList(new SpotLight[]{spotLight0});
-        */
     }
 
     private void setupHUD() throws Exception
     {
         hud = new Hud("LightAngle: ");
     }
-
-    int count = 0;
 
     @Override
     public void input(Window window, MouseInput mouseInput)
@@ -171,21 +143,8 @@ public class Game implements IGameLogic{
         if (window.isKeyPressed(GLFW_KEY_Q)) { cameraIncrement.y = -cameraSpeed; }
         else if (window.isKeyPressed(GLFW_KEY_E)) { cameraIncrement.y = cameraSpeed; }
 
-        if(window.isKeyPressed(GLFW_KEY_1)) { directionalLightAngle += 0.5f; }
-        else if(window.isKeyPressed(GLFW_KEY_2)) { directionalLightAngle -= 0.5f;}
-
-
-        if(window.isKeyPressed(GLFW_KEY_X))
-        {
-            if(car.isEngineRunning())
-            {
-                car.stopEngine();
-            }
-            else
-            {
-                car.startEngine();
-            }
-        }
+        if(window.isKeyPressed(GLFW_KEY_1)) { directionalLightAngle += 1.0f; }
+        else if(window.isKeyPressed(GLFW_KEY_2)) { directionalLightAngle -= 1.0f;}
 
         if (window.isKeyPressed(GLFW_KEY_UP))
         {
@@ -283,8 +242,6 @@ public class Game implements IGameLogic{
         lightDirection.normalize();
 
         scene.getSceneLight().getDirectionalLight().setDirection(lightDirection);
-        //float lightAngle = (float)Math.toDegrees(Math.acos(lightDirection.z));
-        //hud.setStatusText("LightAngle: " + lightAngle);
 
         float absDirectionalAngle = Math.abs(directionalLightAngle - 90);
 
