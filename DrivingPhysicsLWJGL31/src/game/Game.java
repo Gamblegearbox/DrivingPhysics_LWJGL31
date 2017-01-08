@@ -20,7 +20,6 @@ public class Game implements IGameLogic{
     private static final float INPUT_STEERING_SPEED = 0.02f;
     private static final float INPUT_MAX_VALUE = 1.0f;
 
-
     private final Renderer renderer;
     private final Camera camera;
     private final Vector3f cameraIncrement;
@@ -28,11 +27,6 @@ public class Game implements IGameLogic{
     private Car car;
     private Vector3f lightDirection;
     private Scene scene;
-    private GameItem carBody;
-    private GameItem wheelFrontLeft;
-    private GameItem wheelFrontRight;
-    private GameItem wheelRearLeft;
-    private GameItem wheelRearRight;
     private Hud hud;
 
     private float directionalLightAngle;
@@ -69,33 +63,8 @@ public class Game implements IGameLogic{
 
     private void setupGameItems() throws Exception
     {
-        float frontAxlePos = 1.55f;
-        float rearAxlePos = -1.45f;
-        float wheelHeight = 0.40f;
-        float trackWidth = 0.867f;
-
-        Mesh mesh = OBJLoader.loadMesh("/models/Car_Offroad.obj");
-        Material material = new Material(new Vector3f(0.5f, 0.5f, 0.5f), 1f);
-        mesh.setMaterial(material);
-        carBody = new GameItem(mesh);
-        carBody.setPosition(0, 0, 0);
-
-        material = new Material(new Vector3f(0.2f, 0.2f, 0.2f), 0.5f);
-        mesh = OBJLoader.loadMesh(("/models/Wheel_Offroad.obj"));
-        mesh.setMaterial(material);
-        wheelFrontLeft = new GameItem(mesh);
-        wheelFrontRight = new GameItem(mesh);
-        wheelRearLeft = new GameItem(mesh);
-        wheelRearRight = new GameItem(mesh);
-        wheelFrontLeft.setPosition(trackWidth, wheelHeight, frontAxlePos);
-        wheelFrontRight.setPosition(-trackWidth, wheelHeight, frontAxlePos);
-        wheelFrontRight.setRotation(0, 0, 180);
-        wheelRearLeft.setPosition(trackWidth, wheelHeight, rearAxlePos);
-        wheelRearRight.setPosition(-trackWidth, wheelHeight, rearAxlePos);
-        wheelRearRight.setRotation(0, 0, 180);
-
-        material = new Material(new Vector3f(0.5f, 0.5f, 0.5f), 0f);
-        mesh = OBJLoader.loadMesh("/models/GroundPlane.obj");
+        Material material = new Material(new Vector3f(0.5f, 0.5f, 0.5f), 0f);
+        Mesh mesh = OBJLoader.loadMesh("/models/GroundPlane.obj");
         mesh.setMaterial(material);
         GameItem ground = new GameItem(mesh);
         ground.setPosition(0, 0, 0);
@@ -106,7 +75,9 @@ public class Game implements IGameLogic{
         GameItem oneCubicMeter = new GameItem(mesh);
         oneCubicMeter.setPosition(0, 0.5f, 0);
 
-        scene.setGameItems(new GameItem[]{carBody, ground, oneCubicMeter, wheelFrontLeft, wheelFrontRight, wheelRearLeft, wheelRearRight});
+        GameItem[] carParts = car.getGameItems();
+
+        scene.setGameItems(new GameItem[]{carParts[0], carParts[1], carParts[2], carParts[3], carParts[4], ground, oneCubicMeter});
     }
 
     private void setupLight()
@@ -205,15 +176,7 @@ public class Game implements IGameLogic{
         updateCameraAndCompass(mouseInput, interval);
         updateDirectionalLight();
 
-        car.update(throttleInput, brakeInput, steeringInput, gear, handbrakeInput);
-
-        float temp = car.getCurrentSteeringAngle();
-        wheelFrontLeft.getRotation().y = -temp;
-        wheelFrontRight.getRotation().y = -temp;
-
-        wheelRearLeft.getRotation().x -= car.getCurrentEngineRpm() * interval;
-        wheelRearRight.getRotation().x -= 6 * interval; //THIS IS ONE REV PER MIN!! (6 * interval)
-
+        car.update(throttleInput, brakeInput, steeringInput, gear, handbrakeInput, interval);
         hud.setStatusText("Steering: " + steeringInput + " / Throttle: " + throttleInput + " / Brake: " + brakeInput);
     }
 
