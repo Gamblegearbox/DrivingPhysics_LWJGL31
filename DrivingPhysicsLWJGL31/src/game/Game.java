@@ -2,7 +2,7 @@ package game;
 
 import engine.*;
 import engine.Window;
-import engine.car.Car;
+import game.car.Car;
 import engine.gameItem.GameItem;
 import engine.light.DirectionalLight;
 import engine.light.SceneLight;
