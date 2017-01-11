@@ -88,9 +88,7 @@ public class Car {
         wheelRearRight.setRotation(0, 0, 180);
     }
 
-    float temp = 0;
-
-    public void update(float throttleInput, float brakeInput, float steeringInput, int gear, float handbrake, float interval)
+    public void update(float throttleInput, float brakeInput, float steeringInput, int gear, float handbrake, float interval, float debugValue_0, float debugValue_1)
     {
         if(Math.abs(currentSteeringAngle) <= maxSteeringAngle)
         {
@@ -99,15 +97,17 @@ public class Car {
 
         carBodyPosition.z += throttleInput;
         carBodyPosition.z -= brakeInput;
-        carBodyPosition.y = wheelRadius + suspensionHeight;
+
+        float tempSuspensionHeight = suspensionHeight * debugValue_0;
+        carBodyPosition.y = wheelRadius + tempSuspensionHeight;
         carBody.setPosition(carBodyPosition);
 
-        temp += 0.01f;
-        wheelRadius = 0.1f + (float)(Math.abs(Math.sin(temp))) / 2f;
-        frontLeft.setRadius(wheelRadius);
-        frontRight.setRadius(wheelRadius);
-        rearLeft.setRadius(wheelRadius);
-        rearRight.setRadius(wheelRadius);
+
+        float tempWheelRadius = wheelRadius * debugValue_1;
+        frontLeft.setRadius(tempWheelRadius);
+        frontRight.setRadius(tempWheelRadius);
+        rearLeft.setRadius(tempWheelRadius);
+        rearRight.setRadius(tempWheelRadius);
 
         wheelFLPosition.y = frontLeft.getRadius();
         wheelFRPosition.y = frontRight.getRadius();
@@ -117,8 +117,9 @@ public class Car {
         wheelFrontLeft.getRotation().y = -currentSteeringAngle;
         wheelFrontRight.getRotation().y = -currentSteeringAngle;
 
-        wheelRearLeft.getRotation().x -= 6 * interval;
-        wheelRearRight.getRotation().x -= 6 * interval; //THIS IS ONE REV PER MIN!! (6 degrees per second * 60(360 per minute) * interval)
+        //6 * interval IS ONE REV PER MIN!! (6 degrees per second * 60(360 per minute) * interval)
+        wheelRearLeft.getRotation().x -= 60 * interval;
+        wheelRearRight.getRotation().x -= 60 * interval;
 
         wheelFrontLeft.setPosition(wheelFLPosition);
         wheelFrontLeft.setScale(frontLeft.getDiameter());
@@ -131,7 +132,6 @@ public class Car {
 
         wheelRearRight.setPosition(wheelRRPosition);
         wheelRearRight.setScale(rearRight.getDiameter());
-
     }
 
     private float calcCurrentEngineTorque()

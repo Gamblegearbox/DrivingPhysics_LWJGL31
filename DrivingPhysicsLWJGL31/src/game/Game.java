@@ -14,6 +14,7 @@ import static org.lwjgl.glfw.GLFW.*;
 
 public class Game implements IGameLogic{
 
+    private static final boolean DEBUG = true;
     private static final float MOUSE_SENSITIVITY = 0.2f;
     private static final float INPUT_PEDAL_INCREASE = 0.025f;
     private static final float INPUT_PEDAL_DECREASE = 0.05f;
@@ -37,6 +38,14 @@ public class Game implements IGameLogic{
     private float handbrakeInput = 0;
     private int gear = 0;
     private boolean isNight = false;
+
+    //DEBUG VALUES
+    private int totalUpdates = 0;
+    private int totalRenderCycles = 0;
+    private int totalInputCalls = 0;
+    private float debugValue_0 = 1;
+    private float debugValue_1 = 1;
+    private final float debugValueIncrease = 0.01f;
 
 
     public Game()
@@ -96,12 +105,35 @@ public class Game implements IGameLogic{
 
     private void setupHUD() throws Exception
     {
-        hud = new Hud("LightAngle: ");
+        hud = new Hud("");
     }
 
     @Override
     public void input(Window window, MouseInput mouseInput)
     {
+        if(DEBUG)
+        {
+            totalInputCalls++;
+
+            if (window.isKeyPressed(GLFW_KEY_R))
+            {
+                debugValue_0 += debugValueIncrease;
+            }
+            else if (window.isKeyPressed(GLFW_KEY_F))
+            {
+                debugValue_0 -= debugValueIncrease;
+            }
+
+            if (window.isKeyPressed(GLFW_KEY_T))
+            {
+                debugValue_1 += debugValueIncrease;
+            }
+            else if (window.isKeyPressed(GLFW_KEY_G))
+            {
+                debugValue_1 -= debugValueIncrease;
+            }
+        }
+
         float cameraSpeed = window.isKeyPressed(GLFW_KEY_LEFT_SHIFT) ? 5f : 2f;
 
         cameraIncrement.set(0, 0, 0);
@@ -167,16 +199,20 @@ public class Game implements IGameLogic{
                 steeringInput = -INPUT_MAX_VALUE;
             }
         }
-
     }
 
     @Override
     public void update(float interval, MouseInput mouseInput)
     {
+        if(DEBUG)
+        {
+            totalUpdates++;
+        }
+
         updateCameraAndCompass(mouseInput, interval);
         updateDirectionalLight();
 
-        car.update(throttleInput, brakeInput, steeringInput, gear, handbrakeInput, interval);
+        car.update(throttleInput, brakeInput, steeringInput, gear, handbrakeInput, interval, debugValue_0, debugValue_1);
         hud.setStatusText("Steering: " + steeringInput + " / Throttle: " + throttleInput + " / Brake: " + brakeInput);
     }
 
@@ -260,6 +296,11 @@ public class Game implements IGameLogic{
     @Override
     public void render(Window window)
     {
+        if(DEBUG)
+        {
+            totalRenderCycles++;
+        }
+
         hud.updateSize(window);
         renderer.render(window, camera, scene, hud);
     }
@@ -270,6 +311,13 @@ public class Game implements IGameLogic{
         renderer.cleanup();
         scene.cleanup();
         hud.cleanup();
+
+        if(DEBUG)
+        {
+            System.out.println("Input Cycles: " + totalInputCalls);
+            System.out.println("Update Cycles: " + totalUpdates);
+            System.out.println("Render Cycles: " + totalRenderCycles);
+        }
     }
 
 
