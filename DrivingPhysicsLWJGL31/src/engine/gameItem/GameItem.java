@@ -54,6 +54,13 @@ public class GameItem {
         this.rotation.z = z;
     }
 
+    public void setRotation(Vector3f rotation)
+    {
+        this.rotation.x = rotation.x;
+        this.rotation.y = rotation.y;
+        this.rotation.z = rotation.z;
+    }
+
     public float getScale()
     {
         return scale;

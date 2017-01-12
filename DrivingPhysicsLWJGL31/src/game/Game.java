@@ -26,6 +26,7 @@ public class Game implements IGameLogic{
     private final Vector3f cameraIncrement;
 
     private Car car;
+    private GameItem carMesh;
     private Vector3f lightDirection;
     private Scene scene;
     private Hud hud;
@@ -78,15 +79,19 @@ public class Game implements IGameLogic{
         GameItem ground = new GameItem(mesh);
         ground.setPosition(0, 0, 0);
 
-        material = new Material(new Vector3f(0.5f, 0.5f, 0.5f), 0f);
+        material = new Material(new Vector3f(1f, 0f, 0f), 1f);
         mesh = OBJLoader.loadMesh("/models/REF_ONE_CUBIC_METER.obj");
         mesh.setMaterial(material);
         GameItem oneCubicMeter = new GameItem(mesh);
-        oneCubicMeter.setPosition(0, 0.5f, 0);
+        oneCubicMeter.setPosition(2.5f, 0.5f, 0);
 
-        GameItem[] carParts = car.getGameItems();
+        material = new Material(new Vector3f(0.5f, 0.5f, 0.5f), 1f);
+        mesh = OBJLoader.loadMesh("/models/Car_Offroad.obj");
+        mesh.setMaterial(material);
+        carMesh = new GameItem(mesh);
+        carMesh.setPosition(car.getPosition());
 
-        scene.setGameItems(new GameItem[]{carParts[0], carParts[1], carParts[2], carParts[3], carParts[4], ground, oneCubicMeter});
+        scene.setGameItems(new GameItem[]{carMesh, ground, oneCubicMeter});
     }
 
     private void setupLight()
@@ -199,6 +204,21 @@ public class Game implements IGameLogic{
                 steeringInput = -INPUT_MAX_VALUE;
             }
         }
+        else
+        {
+            if(steeringInput < -0.1f)
+            {
+                steeringInput += INPUT_STEERING_SPEED;
+            }
+            else if (steeringInput > 0.1f)
+            {
+                steeringInput -= INPUT_STEERING_SPEED;
+            }
+            else
+            {
+                steeringInput = 0;
+            }
+        }
     }
 
     @Override
@@ -213,6 +233,8 @@ public class Game implements IGameLogic{
         updateDirectionalLight();
 
         car.update(throttleInput, brakeInput, steeringInput, gear, handbrakeInput, interval, debugValue_0, debugValue_1);
+        carMesh.setPosition(car.getPosition());
+        carMesh.setRotation(car.getRotation());
         hud.setStatusText("Steering: " + steeringInput + " / Throttle: " + throttleInput + " / Brake: " + brakeInput);
     }
 
