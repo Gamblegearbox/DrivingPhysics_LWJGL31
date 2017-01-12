@@ -47,15 +47,20 @@ public class Car {
             currentSteeringAngle = maxSteeringAngle * steeringInput;
         }
 
-        currentCarAngle += steeringInput;
+        currentCarAngle -= steeringInput;
         currentCarAngle %= 360f;
 
-        float tempSuspensionHeight = suspensionHeight * debugValue_0;
-        carPosition.y = wheelRadius + tempSuspensionHeight;
-        carPosition.z += throttleInput;
-        carPosition.z -= brakeInput;
+        float degToRad = (float)Math.toRadians(currentCarAngle);
 
+        carForward.x = -(float)Math.sin(degToRad);
+        carForward.z = (float)Math.cos(degToRad);
+        carForward.normalize();
+
+        float tempSuspensionHeight = suspensionHeight * debugValue_0;
         float tempWheelRadius = wheelRadius * debugValue_1;
+        carPosition.y = tempWheelRadius + tempSuspensionHeight;
+        Vector3f movement = new Vector3f(carForward).mul(throttleInput).mul(10).mul(interval);
+        carPosition.add(movement);
     }
 
     private float calcCurrentEngineTorque()

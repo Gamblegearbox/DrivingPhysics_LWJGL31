@@ -18,7 +18,7 @@ public class Game implements IGameLogic{
     private static final float MOUSE_SENSITIVITY = 0.2f;
     private static final float INPUT_PEDAL_INCREASE = 0.025f;
     private static final float INPUT_PEDAL_DECREASE = 0.05f;
-    private static final float INPUT_STEERING_SPEED = 0.02f;
+    private static final float INPUT_STEERING_SPEED = 0.05f;
     private static final float INPUT_MAX_VALUE = 1.0f;
 
     private final Renderer renderer;
@@ -235,7 +235,9 @@ public class Game implements IGameLogic{
         car.update(throttleInput, brakeInput, steeringInput, gear, handbrakeInput, interval, debugValue_0, debugValue_1);
         carMesh.setPosition(car.getPosition());
         carMesh.setRotation(car.getRotation());
-        hud.setStatusText("Steering: " + steeringInput + " / Throttle: " + throttleInput + " / Brake: " + brakeInput);
+
+        hud.setStatusText("CarAngle: " + car.getRotation().y);
+        //hud.setStatusText("Steering: " + steeringInput + " / Throttle: " + throttleInput + " / Brake: " + brakeInput);
     }
 
     private void updateCameraAndCompass(MouseInput mouseInput, float interval)
