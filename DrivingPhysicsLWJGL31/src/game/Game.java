@@ -27,6 +27,11 @@ public class Game implements IGameLogic{
 
     private Car car;
     private GameItem carMesh;
+    private GameItem frontLeftMesh;
+    private GameItem frontRightMesh;
+    private GameItem rearLeftMesh;
+    private GameItem rearRightMesh;
+
     private Vector3f lightDirection;
     private Scene scene;
     private Hud hud;
@@ -44,8 +49,8 @@ public class Game implements IGameLogic{
     private int totalUpdates = 0;
     private int totalRenderCycles = 0;
     private int totalInputCalls = 0;
-    private float debugValue_0 = 1;
-    private float debugValue_1 = 1;
+    private float debugValue_0 = 0;
+    private float debugValue_1 = 0;
     private final float debugValueIncrease = 0.01f;
 
 
@@ -63,6 +68,9 @@ public class Game implements IGameLogic{
         renderer.init(window);
         scene = new Scene();
         car = new Car();
+
+        debugValue_0 = car.getSuspensionHeight();
+        debugValue_1 = car.getWheelRadius();
 
         setupGameItems();
         setupLight();
@@ -82,16 +90,19 @@ public class Game implements IGameLogic{
         material = new Material(new Vector3f(1f, 0f, 0f), 1f);
         mesh = OBJLoader.loadMesh("/models/REF_ONE_CUBIC_METER.obj");
         mesh.setMaterial(material);
-        GameItem oneCubicMeter = new GameItem(mesh);
-        oneCubicMeter.setPosition(2.5f, 0.5f, 0);
+        frontLeftMesh = new GameItem(mesh);
+        frontRightMesh = new GameItem(mesh);
+        rearLeftMesh = new GameItem(mesh);
+        rearRightMesh = new GameItem(mesh);
 
         material = new Material(new Vector3f(0.5f, 0.5f, 0.5f), 1f);
         mesh = OBJLoader.loadMesh("/models/Car_Offroad.obj");
         mesh.setMaterial(material);
         carMesh = new GameItem(mesh);
         carMesh.setPosition(car.getPosition());
+        carMesh.setScale(1);
 
-        scene.setGameItems(new GameItem[]{carMesh, ground, oneCubicMeter});
+        scene.setGameItems(new GameItem[]{carMesh, ground, frontLeftMesh, frontRightMesh, rearLeftMesh, rearRightMesh});
     }
 
     private void setupLight()
@@ -156,57 +167,54 @@ public class Game implements IGameLogic{
 
         if (window.isKeyPressed(GLFW_KEY_UP))
         {
-            throttleInput += INPUT_PEDAL_INCREASE;
+            throttleInput = 1;
+            /*throttleInput += INPUT_PEDAL_INCREASE;
             if(throttleInput > INPUT_MAX_VALUE)
             {
                 throttleInput = INPUT_MAX_VALUE;
-            }
+            }*/
         }
-        else
+        else if (window.isKeyPressed(GLFW_KEY_DOWN))
         {
-            throttleInput -= INPUT_PEDAL_DECREASE;
+            throttleInput = -1;
+            /*throttleInput -= INPUT_PEDAL_DECREASE;
             if(throttleInput < 0f)
             {
                 throttleInput = 0f;
-            }
-        }
-
-        if (window.isKeyPressed(GLFW_KEY_DOWN))
-        {
-            brakeInput += INPUT_PEDAL_INCREASE;
-            if(brakeInput > INPUT_MAX_VALUE)
-            {
-                brakeInput = INPUT_MAX_VALUE;
-            }
+            }*/
         }
         else
         {
-            brakeInput -= INPUT_PEDAL_DECREASE;
+            throttleInput = 0;
+            /*brakeInput -= INPUT_PEDAL_DECREASE;
             if(brakeInput < 0.0f)
             {
                 brakeInput = 0.0f;
-            }
+            }*/
         }
 
         if (window.isKeyPressed(GLFW_KEY_LEFT))
         {
-            steeringInput += INPUT_STEERING_SPEED;
+            steeringInput = 1;
+            /*steeringInput += INPUT_STEERING_SPEED;
             if(steeringInput > INPUT_MAX_VALUE)
             {
                 steeringInput = INPUT_MAX_VALUE;
-            }
+            }*/
         }
         else if (window.isKeyPressed(GLFW_KEY_RIGHT))
         {
-            steeringInput -= INPUT_STEERING_SPEED;
+            steeringInput = -1;
+            /*steeringInput -= INPUT_STEERING_SPEED;
             if(steeringInput < -INPUT_MAX_VALUE)
             {
                 steeringInput = -INPUT_MAX_VALUE;
-            }
+            }*/
         }
         else
         {
-            if(steeringInput < -0.1f)
+            steeringInput = 0;
+            /*if(steeringInput < -0.1f)
             {
                 steeringInput += INPUT_STEERING_SPEED;
             }
@@ -217,7 +225,7 @@ public class Game implements IGameLogic{
             else
             {
                 steeringInput = 0;
-            }
+            }*/
         }
     }
 
@@ -232,9 +240,29 @@ public class Game implements IGameLogic{
         updateCameraAndCompass(mouseInput, interval);
         updateDirectionalLight();
 
-        car.update(throttleInput, brakeInput, steeringInput, gear, handbrakeInput, interval, debugValue_0, debugValue_1);
+        car.setSuspensionHeight(debugValue_0);
+        car.setWheelRadius(debugValue_1);
+        car.update(throttleInput, brakeInput, steeringInput, gear, handbrakeInput, interval);
+
         carMesh.setPosition(car.getPosition());
         carMesh.setRotation(car.getRotation());
+
+        Vector3f[] wheelPositions = car.getWheelPositions();
+        frontLeftMesh.setPosition(wheelPositions[0]);
+        frontLeftMesh.setRotation(car.getRotation());
+        frontLeftMesh.setScale(car.getWheelRadius() * 2.0f);
+
+        frontRightMesh.setPosition(wheelPositions[1]);
+        frontRightMesh.setRotation(car.getRotation());
+        frontRightMesh.setScale(car.getWheelRadius() * 2.0f);
+
+        rearLeftMesh.setPosition(wheelPositions[2]);
+        rearLeftMesh.setRotation(car.getRotation());
+        rearLeftMesh.setScale(car.getWheelRadius() * 2.0f);
+
+        rearRightMesh.setPosition(wheelPositions[3]);
+        rearRightMesh.setRotation(car.getRotation());
+        rearRightMesh.setScale(car.getWheelRadius() * 2.0f);
 
         hud.setStatusText("CarAngle: " + car.getRotation().y);
         //hud.setStatusText("Steering: " + steeringInput + " / Throttle: " + throttleInput + " / Brake: " + brakeInput);
