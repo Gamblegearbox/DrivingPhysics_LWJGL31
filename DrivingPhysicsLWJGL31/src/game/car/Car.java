@@ -1,9 +1,5 @@
 package game.car;
 
-import engine.Material;
-import engine.Mesh;
-import engine.OBJLoader;
-import engine.gameItem.GameItem;
 import org.joml.Math;
 import org.joml.Vector3f;
 

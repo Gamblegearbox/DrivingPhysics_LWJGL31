@@ -11,6 +11,7 @@ import org.joml.Vector2f;
 import org.joml.Vector3f;
 
 import static org.lwjgl.glfw.GLFW.*;
+import static org.lwjgl.opengl.GL11.*;
 
 public class Game implements IGameLogic{
 
@@ -75,7 +76,8 @@ public class Game implements IGameLogic{
         setupGameItems();
         setupLight();
 
-        camera.setPosition(0, 2, 10);
+        camera.setPosition(5, 2, 10);
+        camera.setRotation(0,-45,0);
         setupHUD();
     }
 
@@ -88,7 +90,7 @@ public class Game implements IGameLogic{
         ground.setPosition(0, 0, 0);
 
         material = new Material(new Vector3f(1f, 0f, 0f), 1f);
-        mesh = OBJLoader.loadMesh("/models/REF_ONE_CUBIC_METER.obj");
+        mesh = OBJLoader.loadMesh("/models/Wheel_Offroad.obj");
         mesh.setMaterial(material);
         frontLeftMesh = new GameItem(mesh);
         frontRightMesh = new GameItem(mesh);
@@ -250,6 +252,7 @@ public class Game implements IGameLogic{
         Vector3f[] wheelPositions = car.getWheelPositions();
         frontLeftMesh.setPosition(wheelPositions[0]);
         frontLeftMesh.setRotation(car.getRotation());
+        frontLeftMesh.getRotation().y += 180;
         frontLeftMesh.setScale(car.getWheelRadius() * 2.0f);
 
         frontRightMesh.setPosition(wheelPositions[1]);
@@ -258,6 +261,7 @@ public class Game implements IGameLogic{
 
         rearLeftMesh.setPosition(wheelPositions[2]);
         rearLeftMesh.setRotation(car.getRotation());
+        rearLeftMesh.getRotation().y += 180;
         rearLeftMesh.setScale(car.getWheelRadius() * 2.0f);
 
         rearRightMesh.setPosition(wheelPositions[3]);
