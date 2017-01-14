@@ -268,7 +268,7 @@ public class Game implements IGameLogic{
         rearRightMesh.setRotation(car.getRotation());
         rearRightMesh.setScale(car.getWheelRadius() * 2.0f);
 
-        hud.setStatusText("CarAngle: " + car.getRotation().y);
+        hud.setStatusText("v: " + car.velocity.length() + " / a: " + car.acceleration.length() + " / Forward: " + car.carForward.length());
         //hud.setStatusText("Steering: " + steeringInput + " / Throttle: " + throttleInput + " / Brake: " + brakeInput);
     }
 

@@ -164,7 +164,7 @@ float calcShadow(vec4 position)
     vec3 projCoords = position.xyz;
     // Transform from screen coordinates to texture coordinates
     projCoords = projCoords * 0.5 + 0.5;
-    float bias = 0.01;
+    float bias = 0.05;
 
     float shadowFactor = 0.0;
     vec2 inc = 1.0 / textureSize(shadowMap, 0);
@@ -210,7 +210,7 @@ void main()
     }
 
     float shadow = calcShadow(mlightviewVertexPos);
-    fragColor = baseColour * ( vec4(ambientLight, 1.0) + totalLight * shadow );
+    fragColor = baseColour * ( vec4(ambientLight, 1.0) + totalLight/* * shadow */);
 
     if ( fog.activeFog == 1 )
     {

@@ -3,8 +3,6 @@ package game.car;
 import org.joml.Math;
 import org.joml.Vector3f;
 
-import java.util.Vector;
-
 public class Car {
 
     private final float maxSteeringAngle = 35f;
@@ -14,27 +12,30 @@ public class Car {
     private final float trackWidth = 0.867f;
 
     private float currentSteeringAngle;
-    private float currentEngineRpm;
     private float wheelRadius;
     private float suspensionHeight;
     private float currentCarAngle = 0;
 
     private Vector3f carPosition;
-    private Vector3f carForward;
+    public Vector3f carForward;
     private Vector3f carUp;
     private Vector3f carLeft;
+    public Vector3f acceleration;
+    public Vector3f velocity;
 
     public Car()
     {
         wheelRadius = 0.43f;
         suspensionHeight = 0.2f;
         currentSteeringAngle = 0;
-        currentEngineRpm = 0;
 
         carPosition = new Vector3f(0,0,0);
         carForward = new Vector3f(0,0,1);
         carUp = new Vector3f(0,1,0);
         carLeft = new Vector3f(1,0,0);
+
+        acceleration = new Vector3f(0,0,0);
+        velocity = new Vector3f(0,0,0);
     }
 
     public void update(float throttleInput, float brakeInput, float steeringInput, int gear, float handbrake, float interval)
@@ -54,16 +55,11 @@ public class Car {
         carForward.z = (float)Math.cos(degToRad);
         carForward.normalize();
 
-        Vector3f movement = new Vector3f(carForward).mul(throttleInput * 10).mul(interval);
-        carPosition.add(movement);
+        acceleration = new Vector3f(carForward).mul(throttleInput);
+        velocity.add(acceleration);
+        carPosition.add(new Vector3f(velocity).mul(interval));
 
         carPosition.y = wheelRadius + suspensionHeight;
-    }
-
-    private float calcCurrentEngineTorque()
-    {
-        //todo: find a good formula for a torpque/rpm curve
-        return currentEngineRpm / 10;
     }
 
     public Vector3f getPosition()

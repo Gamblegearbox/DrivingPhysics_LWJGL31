@@ -68,8 +68,6 @@ public class Renderer {
 
         renderScene(window, camera, scene);
         renderHud(window, hud);
-
-        //renderAxes(camera);
     }
 
     private void setupOpenGL()
@@ -141,6 +139,7 @@ public class Renderer {
     {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     }
+
 
     private void renderDepthMap(Window window, Camera camera, Scene scene)
     {
@@ -285,36 +284,6 @@ public class Renderer {
 
             hudShaderProgram.unbind();
         }
-    }
-
-    private void renderAxes(Camera camera)
-    {
-        glPushMatrix();
-        glLoadIdentity();
-        float rotX = camera.getRotation().x;
-        float rotY = camera.getRotation().y;
-        float rotZ = 0;
-        glRotatef(rotX, 1.0f, 0.0f, 0.0f);
-        glRotatef(rotY, 0.0f, 1.0f, 0.0f);
-        glRotatef(rotZ, 0.0f, 0.0f, 1.0f);
-        glLineWidth(2.0f);
-
-        glBegin(GL_LINES);
-        // X Axis
-        glColor3f(1.0f, 0.0f, 0.0f);
-        glVertex3f(0.0f, 0.0f, 0.0f);
-        glVertex3f(1.0f, 0.0f, 0.0f);
-        // Y Axis
-        glColor3f(0.0f, 1.0f, 0.0f);
-        glVertex3f(0.0f, 0.0f, 0.0f);
-        glVertex3f(0.0f, 1.0f, 0.0f);
-        // Z Axis
-        glColor3f(1.0f, 1.0f, 1.0f);
-        glVertex3f(0.0f, 0.0f, 0.0f);
-        glVertex3f(0.0f, 0.0f, 1.0f);
-        glEnd();
-
-        glPopMatrix();
     }
 
     public void cleanup()
