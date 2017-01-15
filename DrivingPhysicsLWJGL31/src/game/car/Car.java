@@ -20,8 +20,8 @@ public class Car {
     public Vector3f carForward;
     private Vector3f carUp;
     private Vector3f carLeft;
-    public Vector3f acceleration;
-    public Vector3f velocity;
+    public float acceleration;
+    public float velocity;
 
     public Car()
     {
@@ -33,9 +33,6 @@ public class Car {
         carForward = new Vector3f(0,0,1);
         carUp = new Vector3f(0,1,0);
         carLeft = new Vector3f(1,0,0);
-
-        acceleration = new Vector3f(0,0,0);
-        velocity = new Vector3f(0,0,0);
     }
 
     public void update(float throttleInput, float brakeInput, float steeringInput, int gear, float handbrake, float interval)
@@ -55,11 +52,17 @@ public class Car {
         carForward.z = (float)Math.cos(degToRad);
         carForward.normalize();
 
-        acceleration = new Vector3f(carForward).mul(throttleInput);
-        velocity.add(acceleration);
-        carPosition.add(new Vector3f(velocity).mul(interval));
+        acceleration = throttleInput;
+        velocity += acceleration;
+        Vector3f movement = new Vector3f(carForward).mul(velocity);
+        carPosition.add(movement.mul(interval));
 
         carPosition.y = wheelRadius + suspensionHeight;
+    }
+
+    public float getCurrentSteeringAngle()
+    {
+        return currentSteeringAngle;
     }
 
     public Vector3f getPosition()
@@ -124,5 +127,6 @@ public class Car {
     {
         this.suspensionHeight = suspensionHeight;
     }
+
 
 }

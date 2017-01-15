@@ -19,7 +19,7 @@ public class Game implements IGameLogic{
     private static final float MOUSE_SENSITIVITY = 0.2f;
     private static final float INPUT_PEDAL_INCREASE = 0.025f;
     private static final float INPUT_PEDAL_DECREASE = 0.05f;
-    private static final float INPUT_STEERING_SPEED = 0.05f;
+    private static final float INPUT_STEERING_SPEED = 0.1f;
     private static final float INPUT_MAX_VALUE = 1.0f;
 
     private final Renderer renderer;
@@ -97,7 +97,7 @@ public class Game implements IGameLogic{
         rearLeftMesh = new GameItem(mesh);
         rearRightMesh = new GameItem(mesh);
 
-        material = new Material(new Vector3f(0.5f, 0.5f, 0.5f), 1f);
+        material = new Material(new Vector3f(0.2f, 0.2f, 0.2f), 1f);
         mesh = OBJLoader.loadMesh("/models/Car_Offroad.obj");
         mesh.setMaterial(material);
         carMesh = new GameItem(mesh);
@@ -169,54 +169,40 @@ public class Game implements IGameLogic{
 
         if (window.isKeyPressed(GLFW_KEY_UP))
         {
-            throttleInput = 1;
-            /*throttleInput += INPUT_PEDAL_INCREASE;
+            throttleInput += INPUT_PEDAL_INCREASE;
             if(throttleInput > INPUT_MAX_VALUE)
             {
                 throttleInput = INPUT_MAX_VALUE;
-            }*/
-        }
-        else if (window.isKeyPressed(GLFW_KEY_DOWN))
-        {
-            throttleInput = -1;
-            /*throttleInput -= INPUT_PEDAL_DECREASE;
-            if(throttleInput < 0f)
-            {
-                throttleInput = 0f;
-            }*/
+            }
         }
         else
         {
-            throttleInput = 0;
-            /*brakeInput -= INPUT_PEDAL_DECREASE;
-            if(brakeInput < 0.0f)
+            throttleInput -= INPUT_PEDAL_DECREASE;
+            if(throttleInput < 0.0f)
             {
-                brakeInput = 0.0f;
-            }*/
+                throttleInput = 0.0f;
+            }
         }
 
         if (window.isKeyPressed(GLFW_KEY_LEFT))
         {
-            steeringInput = 1;
-            /*steeringInput += INPUT_STEERING_SPEED;
+            steeringInput += INPUT_STEERING_SPEED;
             if(steeringInput > INPUT_MAX_VALUE)
             {
                 steeringInput = INPUT_MAX_VALUE;
-            }*/
+            }
         }
         else if (window.isKeyPressed(GLFW_KEY_RIGHT))
         {
-            steeringInput = -1;
-            /*steeringInput -= INPUT_STEERING_SPEED;
+            steeringInput -= INPUT_STEERING_SPEED;
             if(steeringInput < -INPUT_MAX_VALUE)
             {
                 steeringInput = -INPUT_MAX_VALUE;
-            }*/
+            }
         }
         else
         {
-            steeringInput = 0;
-            /*if(steeringInput < -0.1f)
+            if(steeringInput < -0.1f)
             {
                 steeringInput += INPUT_STEERING_SPEED;
             }
@@ -227,7 +213,7 @@ public class Game implements IGameLogic{
             else
             {
                 steeringInput = 0;
-            }*/
+            }
         }
     }
 
@@ -250,25 +236,26 @@ public class Game implements IGameLogic{
         carMesh.setRotation(car.getRotation());
 
         Vector3f[] wheelPositions = car.getWheelPositions();
+        Vector3f carRotation = car.getRotation();
         frontLeftMesh.setPosition(wheelPositions[0]);
-        frontLeftMesh.setRotation(car.getRotation());
+        frontLeftMesh.setRotation(carRotation.x, carRotation.y - car.getCurrentSteeringAngle(), carRotation.z);
         frontLeftMesh.getRotation().y += 180;
         frontLeftMesh.setScale(car.getWheelRadius() * 2.0f);
 
         frontRightMesh.setPosition(wheelPositions[1]);
-        frontRightMesh.setRotation(car.getRotation());
+        frontRightMesh.setRotation(carRotation.x, carRotation.y - car.getCurrentSteeringAngle(), carRotation.z);
         frontRightMesh.setScale(car.getWheelRadius() * 2.0f);
 
         rearLeftMesh.setPosition(wheelPositions[2]);
-        rearLeftMesh.setRotation(car.getRotation());
+        rearLeftMesh.setRotation(carRotation);
         rearLeftMesh.getRotation().y += 180;
         rearLeftMesh.setScale(car.getWheelRadius() * 2.0f);
 
         rearRightMesh.setPosition(wheelPositions[3]);
-        rearRightMesh.setRotation(car.getRotation());
+        rearRightMesh.setRotation(carRotation);
         rearRightMesh.setScale(car.getWheelRadius() * 2.0f);
 
-        hud.setStatusText("v: " + car.velocity.length() + " / a: " + car.acceleration.length() + " / Forward: " + car.carForward.length());
+        hud.setStatusText("v: " + car.velocity + " / a: " + car.acceleration + " / Forward: " + car.carForward.length());
         //hud.setStatusText("Steering: " + steeringInput + " / Throttle: " + throttleInput + " / Brake: " + brakeInput);
     }
 
