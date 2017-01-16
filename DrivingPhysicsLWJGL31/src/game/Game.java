@@ -77,16 +77,14 @@ public class Game implements IGameLogic{
         setupGameItems();
         setupLight();
 
-        camera.setPosition(5, 2, 10);
-        camera.setRotation(0,-45,0);
+        camera.setPosition(0, 25, 25);
+        camera.setRotation(45,0,0);
         setupHUD();
     }
 
     private void setupGameItems() throws Exception
     {
-        Texture texture = new Texture("/textures/Tiles_DIFF.png");
         Material material = new Material(new Vector3f(0.5f, 0.5f, 0.5f), 0f);
-        material.setTexture(texture);
         Mesh mesh = OBJLoader.loadMesh("/models/GroundPlane.obj");
         mesh.setMaterial(material);
         GameItem ground = new GameItem(mesh);
@@ -107,7 +105,24 @@ public class Game implements IGameLogic{
         carMesh.setPosition(car.getPosition());
         carMesh.setScale(1);
 
-        scene.setGameItems(new GameItem[]{carMesh, ground, frontLeftMesh, frontRightMesh, rearLeftMesh, rearRightMesh});
+        material = new Material(new Vector3f(0f, 1f, 0f), 0f);
+        mesh = OBJLoader.loadMesh("/models/REF_ONE_CUBIC_METER.obj");
+        mesh.setMaterial(material);
+        GameItem cube1 = new GameItem(mesh);
+        cube1.setPosition(0,0.5f,-15);
+        GameItem cube2 = new GameItem(mesh);
+        cube2.setPosition(1,0.5f,-15);
+        GameItem cube3 = new GameItem(mesh);
+        cube3.setPosition(2,0.5f,-15);
+        GameItem cube4 = new GameItem(mesh);
+        cube4.setPosition(3,0.5f,-15);
+        GameItem cube5 = new GameItem(mesh);
+        cube5.setPosition(4,0.5f,-15);
+
+        scene.setGameItems(new GameItem[]{ carMesh, ground, frontLeftMesh, frontRightMesh, rearLeftMesh, rearRightMesh, cube1, cube2, cube3, cube4, cube5 });
+
+
+
     }
 
     private void setupLight()
@@ -277,8 +292,8 @@ public class Game implements IGameLogic{
         rearRightMesh.setRotation(carRotation);
         rearRightMesh.setScale(car.getWheelRadius() * 2.0f);
 
-        //hud.setStatusText("v: " + car.velocity + " / a: " + car.acceleration + " / Forward: " + car.carForward.length());
-        hud.setStatusText("Steering: " + steeringInput + " / Throttle: " + throttleInput + " / Brake: " + brakeInput);
+        hud.setStatusText("v: " + car.velocity + " / a: " + car.acceleration + " / Force: " + car.currentForce + " / Km/h: " + car.kilometersPerHour);
+        //hud.setStatusText("Steering: " + steeringInput + " / Throttle: " + throttleInput + " / Brake: " + brakeInput);
     }
 
     private void updateCameraAndCompass(MouseInput mouseInput, float interval)

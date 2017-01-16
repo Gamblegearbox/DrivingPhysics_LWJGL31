@@ -11,6 +11,10 @@ public class Car {
     private final float frontAxlePos = 1.55f;
     private final float rearAxlePos = -1.45f;
     private final float trackWidth = 0.867f;
+    private final float maxSpeed = 13.888888889f;
+    private final float mass;
+    private final float maxEngineForce;
+    private final float maxBrakeForce;
 
     private float currentSteeringAngle;
     private float wheelRadius;
@@ -23,11 +27,17 @@ public class Car {
     private Vector3f carLeft;
     public float acceleration;
     public float velocity;
+    public float kilometersPerHour;
+    public float currentForce;
+
 
     public Car()
     {
         wheelRadius = 0.43f;
         suspensionHeight = 0.2f;
+        mass = 2000f;
+        maxEngineForce = 600f;
+        maxBrakeForce = 500f;
         currentSteeringAngle = 0;
 
         carPosition = new Vector3f(0,0,0);
@@ -38,13 +48,22 @@ public class Car {
 
     public void update(float throttleInput, float brakeInput, float steeringInput, int gear, float handbrake, float interval)
     {
-        //6 * interval IS ONE REV PER MIN!! (6 degrees per second * 60(360 per minute) * interval)
+        //6 * interval IS ONE REV PER MIN ON THE WHEEL!! (6 degrees per second * 60(360 per minute) * interval)
         if(Math.abs(currentSteeringAngle) <= maxSteeringAngle)
         {
             currentSteeringAngle = maxSteeringAngle * steeringInput;
         }
 
-        currentCarAngle -= steeringInput;
+        //make sure that the car turns in the right direction when driving in reverse
+        if(velocity >= 0)
+        {
+            currentCarAngle -= steeringInput;
+        }
+        else
+        {
+            currentCarAngle += steeringInput;
+        }
+
         currentCarAngle %= 360f;
 
         float degToRad = (float)Math.toRadians(currentCarAngle);
@@ -53,10 +72,24 @@ public class Car {
         carForward.z = (float)Math.cos(degToRad);
         carForward.normalize();
 
-        acceleration = throttleInput;
-        velocity += acceleration;
+        currentForce = maxEngineForce * throttleInput - maxBrakeForce * brakeInput;
 
-        //MASSE MUSS MIT REIN!!
+        acceleration = Physics.calcAcceleration(mass, currentForce);
+
+        velocity += acceleration;
+        if(velocity > maxSpeed)
+        {
+            velocity = maxSpeed;
+        }
+        else if(velocity < -maxSpeed)
+        {
+            velocity = -maxSpeed;
+        }
+
+        kilometersPerHour = Physics.metersPerSecondToKilometersPerHour(velocity);
+
+        /*
+        //TODO: MASSE MUSS MIT REIN!!
         float C_R = 0.4f;
         float C_H = 0.5f;
 
@@ -71,7 +104,7 @@ public class Car {
         {
             velocity = 0;
         }
-
+        */
         Vector3f movement = new Vector3f(carForward).mul(velocity);
         carPosition.add(movement.mul(interval));
         carPosition.y = wheelRadius + suspensionHeight;
@@ -144,6 +177,7 @@ public class Car {
     {
         this.suspensionHeight = suspensionHeight;
     }
+
 
 
 }
