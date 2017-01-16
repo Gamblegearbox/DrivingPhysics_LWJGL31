@@ -2,6 +2,7 @@ package game;
 
 import engine.*;
 import engine.Window;
+import engine.texture.Texture;
 import game.car.Car;
 import engine.gameItem.GameItem;
 import engine.light.DirectionalLight;
@@ -17,8 +18,8 @@ public class Game implements IGameLogic{
 
     private static final boolean DEBUG = true;
     private static final float MOUSE_SENSITIVITY = 0.2f;
-    private static final float INPUT_PEDAL_INCREASE = 0.025f;
-    private static final float INPUT_PEDAL_DECREASE = 0.05f;
+    private static final float INPUT_PEDAL_INCREASE = 0.05f;
+    private static final float INPUT_PEDAL_DECREASE = 0.075f;
     private static final float INPUT_STEERING_SPEED = 0.1f;
     private static final float INPUT_MAX_VALUE = 1.0f;
 
@@ -83,7 +84,9 @@ public class Game implements IGameLogic{
 
     private void setupGameItems() throws Exception
     {
+        Texture texture = new Texture("/textures/Tiles_DIFF.png");
         Material material = new Material(new Vector3f(0.5f, 0.5f, 0.5f), 0f);
+        material.setTexture(texture);
         Mesh mesh = OBJLoader.loadMesh("/models/GroundPlane.obj");
         mesh.setMaterial(material);
         GameItem ground = new GameItem(mesh);
@@ -184,6 +187,25 @@ public class Game implements IGameLogic{
             }
         }
 
+        if (window.isKeyPressed(GLFW_KEY_DOWN))
+        {
+            brakeInput += INPUT_PEDAL_INCREASE;
+            if(brakeInput > INPUT_MAX_VALUE)
+            {
+                brakeInput = INPUT_MAX_VALUE;
+            }
+        }
+        else
+        {
+            brakeInput -= INPUT_PEDAL_DECREASE;
+            if(brakeInput < 0.0f)
+            {
+                brakeInput = 0.0f;
+            }
+        }
+
+
+
         if (window.isKeyPressed(GLFW_KEY_LEFT))
         {
             steeringInput += INPUT_STEERING_SPEED;
@@ -255,8 +277,8 @@ public class Game implements IGameLogic{
         rearRightMesh.setRotation(carRotation);
         rearRightMesh.setScale(car.getWheelRadius() * 2.0f);
 
-        hud.setStatusText("v: " + car.velocity + " / a: " + car.acceleration + " / Forward: " + car.carForward.length());
-        //hud.setStatusText("Steering: " + steeringInput + " / Throttle: " + throttleInput + " / Brake: " + brakeInput);
+        //hud.setStatusText("v: " + car.velocity + " / a: " + car.acceleration + " / Forward: " + car.carForward.length());
+        hud.setStatusText("Steering: " + steeringInput + " / Throttle: " + throttleInput + " / Brake: " + brakeInput);
     }
 
     private void updateCameraAndCompass(MouseInput mouseInput, float interval)

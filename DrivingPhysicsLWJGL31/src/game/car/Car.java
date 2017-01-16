@@ -1,5 +1,6 @@
 package game.car;
 
+import engine.Physics;
 import org.joml.Math;
 import org.joml.Vector3f;
 
@@ -54,9 +55,25 @@ public class Car {
 
         acceleration = throttleInput;
         velocity += acceleration;
+
+        //MASSE MUSS MIT REIN!!
+        float C_R = 0.4f;
+        float C_H = 0.5f;
+
+        if (Math.abs(velocity) > (0.5f * C_H * Physics.G * interval) * 4.0f)
+        {
+            if (velocity > 0)
+            {
+                velocity = velocity - ((0.5f * C_R * Physics.G * interval) * 4.0f);
+            }
+        }
+        else
+        {
+            velocity = 0;
+        }
+
         Vector3f movement = new Vector3f(carForward).mul(velocity);
         carPosition.add(movement.mul(interval));
-
         carPosition.y = wheelRadius + suspensionHeight;
     }
 
