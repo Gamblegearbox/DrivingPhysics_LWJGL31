@@ -77,8 +77,8 @@ public class Game implements IGameLogic{
         setupGameItems();
         setupLight();
 
-        camera.setPosition(0, 25, 25);
-        camera.setRotation(45,0,0);
+        camera.setPosition(0, 5, 10);
+        camera.setRotation(15,0,0);
         setupHUD();
     }
 
