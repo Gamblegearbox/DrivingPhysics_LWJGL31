@@ -34,6 +34,9 @@ public class Game implements IGameLogic{
     private GameItem rearLeftMesh;
     private GameItem rearRightMesh;
 
+    private Rigidbody testCube;
+    private GameItem testCubeMesh;
+
     private Vector3f lightDirection;
     private Scene scene;
     private Hud hud;
@@ -77,8 +80,8 @@ public class Game implements IGameLogic{
         setupGameItems();
         setupLight();
 
-        camera.setPosition(0, 5, 10);
-        camera.setRotation(15,0,0);
+        camera.setPosition(0, 5, 20);
+        camera.setRotation(0,0,0);
         setupHUD();
     }
 
@@ -108,18 +111,19 @@ public class Game implements IGameLogic{
         material = new Material(new Vector3f(0f, 1f, 0f), 0f);
         mesh = OBJLoader.loadMesh("/models/REF_ONE_CUBIC_METER.obj");
         mesh.setMaterial(material);
-        GameItem cube1 = new GameItem(mesh);
-        cube1.setPosition(0,0.5f,-15);
-        GameItem cube2 = new GameItem(mesh);
-        cube2.setPosition(1,0.5f,-15);
-        GameItem cube3 = new GameItem(mesh);
-        cube3.setPosition(2,0.5f,-15);
-        GameItem cube4 = new GameItem(mesh);
-        cube4.setPosition(3,0.5f,-15);
-        GameItem cube5 = new GameItem(mesh);
-        cube5.setPosition(4,0.5f,-15);
 
-        scene.setGameItems(new GameItem[]{ carMesh, ground, frontLeftMesh, frontRightMesh, rearLeftMesh, rearRightMesh, cube1, cube2, cube3, cube4, cube5 });
+
+        testCubeMesh = new GameItem(mesh);
+        testCubeMesh.setPosition(0,25f,-15);
+        testCube = new Rigidbody(testCubeMesh.getPosition());
+
+        GameItem cube2 = new GameItem(mesh);
+        cube2.setPosition(2,0.5f,-15);
+
+        GameItem cube3 = new GameItem(mesh);
+        cube3.setPosition(4,0.5f,-15);
+
+        scene.setGameItems(new GameItem[]{ carMesh, ground, frontLeftMesh, frontRightMesh, rearLeftMesh, rearRightMesh, testCubeMesh, cube2, cube3 });
 
 
 
@@ -291,6 +295,9 @@ public class Game implements IGameLogic{
         rearRightMesh.setPosition(wheelPositions[3]);
         rearRightMesh.setRotation(carRotation);
         rearRightMesh.setScale(car.getWheelRadius() * 2.0f);
+
+        testCube.update(interval);
+        testCubeMesh.setPosition(testCube.getPosition());
 
         hud.setStatusText("v: " + car.velocity + " / a: " + car.acceleration + " / Force: " + car.currentForce + " / Km/h: " + car.kilometersPerHour);
         //hud.setStatusText("Steering: " + steeringInput + " / Throttle: " + throttleInput + " / Brake: " + brakeInput);
