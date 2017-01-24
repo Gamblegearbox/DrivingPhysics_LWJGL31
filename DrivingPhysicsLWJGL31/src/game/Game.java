@@ -2,7 +2,6 @@ package game;
 
 import engine.*;
 import engine.Window;
-import engine.texture.Texture;
 import game.car.Car;
 import engine.gameItem.GameItem;
 import engine.light.DirectionalLight;
@@ -12,7 +11,6 @@ import org.joml.Vector2f;
 import org.joml.Vector3f;
 
 import static org.lwjgl.glfw.GLFW.*;
-import static org.lwjgl.opengl.GL11.*;
 
 public class Game implements IGameLogic{
 
@@ -115,7 +113,7 @@ public class Game implements IGameLogic{
 
         testCubeMesh = new GameItem(mesh);
         testCubeMesh.setPosition(0,25f,-15);
-        testCube = new Rigidbody(testCubeMesh.getPosition());
+        testCube = new Rigidbody(testCubeMesh.getPosition(), 1f);
 
         GameItem cube2 = new GameItem(mesh);
         cube2.setPosition(2,0.5f,-15);
@@ -299,7 +297,7 @@ public class Game implements IGameLogic{
         testCube.update(interval);
         testCubeMesh.setPosition(testCube.getPosition());
 
-        hud.setStatusText("v: " + car.velocity + " / a: " + car.acceleration + " / Force: " + car.currentForce + " / Km/h: " + car.kilometersPerHour);
+        hud.setStatusText("v: " + car.speed + " / a: " + car.acceleration + " / Force: " + car.currentForce + " / Km/h: " + car.kilometersPerHour);
         //hud.setStatusText("Steering: " + steeringInput + " / Throttle: " + throttleInput + " / Brake: " + brakeInput);
     }
 

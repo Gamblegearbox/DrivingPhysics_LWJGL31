@@ -8,9 +8,9 @@ public class Car {
 
     private final float maxSteeringAngle = 35f;
 
-    private final float frontAxlePos = 1.55f;
-    private final float rearAxlePos = -1.45f;
-    private final float trackWidth = 0.867f;
+    private final float frontAxlePos = 1.74f;
+    private final float rearAxlePos = -1.41f;
+    private final float trackWidth = 0.8f;
     private final float maxSpeed = 13.888888889f;
     private final float mass;
     private final float maxEngineForce;
@@ -26,7 +26,7 @@ public class Car {
     private Vector3f carUp;
     private Vector3f carLeft;
     public float acceleration;
-    public float velocity;
+    public float speed;
     public float kilometersPerHour;
     public float currentForce;
 
@@ -36,8 +36,8 @@ public class Car {
         wheelRadius = 0.43f;
         suspensionHeight = 0.2f;
         mass = 2000f;
-        maxEngineForce = 600f;
-        maxBrakeForce = 500f;
+        maxEngineForce = 6000f;
+        maxBrakeForce = 12000f;
         currentSteeringAngle = 0;
 
         carPosition = new Vector3f(0,0,0);
@@ -55,7 +55,7 @@ public class Car {
         }
 
         //make sure that the car turns in the right direction when driving in reverse
-        if(velocity >= 0)
+        if(speed >= 0)
         {
             currentCarAngle -= steeringInput;
         }
@@ -67,46 +67,46 @@ public class Car {
         currentCarAngle %= 360f;
 
         float degToRad = (float)Math.toRadians(currentCarAngle);
-
         carForward.x = -(float)Math.sin(degToRad);
         carForward.z = (float)Math.cos(degToRad);
         carForward.normalize();
 
-        currentForce = maxEngineForce * throttleInput - maxBrakeForce * brakeInput;
 
+        currentForce = maxEngineForce * throttleInput - maxBrakeForce * brakeInput;
         acceleration = Physics.calcAcceleration(mass, currentForce);
 
-        velocity += acceleration;
-        if(velocity > maxSpeed)
+        speed += acceleration * interval;
+        if(speed > maxSpeed)
         {
-            velocity = maxSpeed;
+            speed = maxSpeed;
         }
-        else if(velocity < -maxSpeed)
+        else if(speed < -maxSpeed)
         {
-            velocity = -maxSpeed;
+            speed = -maxSpeed;
         }
 
-        kilometersPerHour = Physics.metersPerSecondToKilometersPerHour(velocity);
+        kilometersPerHour = Physics.metersPerSecondToKilometersPerHour(speed);
 
         /*
         //TODO: MASSE MUSS MIT REIN!!
         float C_R = 0.4f;
         float C_H = 0.5f;
 
-        if (Math.abs(velocity) > (0.5f * C_H * Physics.G * interval) * 4.0f)
+        if (Math.abs(speed) > (0.5f * C_H * Physics.G * interval) * 4.0f)
         {
-            if (velocity > 0)
+            if (speed > 0)
             {
-                velocity = velocity - ((0.5f * C_R * Physics.G * interval) * 4.0f);
+                speed = speed - ((0.5f * C_R * Physics.G * interval) * 4.0f);
             }
         }
         else
         {
-            velocity = 0;
+            speed = 0;
         }
         */
-        Vector3f movement = new Vector3f(carForward).mul(velocity);
-        carPosition.add(movement.mul(interval));
+
+        Vector3f velocity = new Vector3f(carForward).mul(speed);
+        carPosition.add(velocity.mul(interval));
         carPosition.y = wheelRadius + suspensionHeight;
     }
 
