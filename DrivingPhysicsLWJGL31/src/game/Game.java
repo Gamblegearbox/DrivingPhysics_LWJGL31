@@ -2,6 +2,7 @@ package game;
 
 import engine.*;
 import engine.Window;
+import engine.texture.Texture;
 import game.car.Car;
 import engine.gameItem.GameItem;
 import engine.light.DirectionalLight;
@@ -85,13 +86,15 @@ public class Game implements IGameLogic{
 
     private void setupGameItems() throws Exception
     {
+        Texture texture = new Texture("/textures/colors.png");
         Material material = new Material(new Vector3f(0.5f, 0.5f, 0.5f), 0f);
         Mesh mesh = OBJLoader.loadMesh("/models/GroundPlane.obj");
         mesh.setMaterial(material);
         GameItem ground = new GameItem(mesh);
         ground.setPosition(0, 0, 0);
 
-        material = new Material(new Vector3f(1f, 0f, 0f), 1f);
+        material = new Material(new Vector3f(0f, 0f, 0f), 1f);
+        material.setTexture(texture);
         mesh = OBJLoader.loadMesh("/models/Wheel_Offroad.obj");
         mesh.setMaterial(material);
         frontLeftMesh = new GameItem(mesh);
@@ -99,7 +102,8 @@ public class Game implements IGameLogic{
         rearLeftMesh = new GameItem(mesh);
         rearRightMesh = new GameItem(mesh);
 
-        material = new Material(new Vector3f(0.2f, 0.2f, 0.2f), 1f);
+        material = new Material(new Vector3f(1f, 1f, 1f), 1f);
+        material.setTexture(texture);
         mesh = OBJLoader.loadMesh("/models/Car_Offroad.obj");
         mesh.setMaterial(material);
         carMesh = new GameItem(mesh);
@@ -122,8 +126,6 @@ public class Game implements IGameLogic{
         cube3.setPosition(4,0.5f,-15);
 
         scene.setGameItems(new GameItem[]{ carMesh, ground, frontLeftMesh, frontRightMesh, rearLeftMesh, rearRightMesh, testCubeMesh, cube2, cube3 });
-
-
 
     }
 

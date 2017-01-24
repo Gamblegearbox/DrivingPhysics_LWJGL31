@@ -22,9 +22,11 @@ public class Car {
     private float currentCarAngle = 0;
 
     private Vector3f carPosition;
-    public Vector3f carForward;
+    private Vector3f carForward;
     private Vector3f carUp;
     private Vector3f carLeft;
+    private Vector3f[] wheelPositions;
+
     public float acceleration;
     public float speed;
     public float kilometersPerHour;
@@ -44,6 +46,7 @@ public class Car {
         carForward = new Vector3f(0,0,1);
         carUp = new Vector3f(0,1,0);
         carLeft = new Vector3f(1,0,0);
+        wheelPositions = new Vector3f[4];
     }
 
     public void update(float throttleInput, float brakeInput, float steeringInput, int gear, float handbrake, float interval)
@@ -70,7 +73,7 @@ public class Car {
         carForward.x = -(float)Math.sin(degToRad);
         carForward.z = (float)Math.cos(degToRad);
         carForward.normalize();
-
+        carLeft = new Vector3f(new Vector3f(carUp).cross(new Vector3f(carForward)));
 
         currentForce = maxEngineForce * throttleInput - maxBrakeForce * brakeInput;
         acceleration = Physics.calcAcceleration(mass, currentForce);
@@ -108,6 +111,36 @@ public class Car {
         Vector3f velocity = new Vector3f(carForward).mul(speed);
         carPosition.add(velocity.mul(interval));
         carPosition.y = wheelRadius + suspensionHeight;
+        calcWheelPositions();
+    }
+
+    private void calcWheelPositions()
+    {
+        Vector3f temp = new Vector3f(0,0,0);
+
+        temp.set(carPosition);
+        temp.add(new Vector3f(carForward).mul(frontAxlePos));
+        temp.add(new Vector3f(carLeft).mul(-trackWidth));
+        temp.y = wheelRadius;
+        wheelPositions[0] = new Vector3f(temp);
+
+        temp.set(carPosition);
+        temp.add(new Vector3f(carForward).mul(frontAxlePos));
+        temp.add(new Vector3f(carLeft).mul(trackWidth));
+        temp.y = wheelRadius;
+        wheelPositions[1] = new Vector3f(temp);
+
+        temp.set(carPosition);
+        temp.add(new Vector3f(carForward).mul(rearAxlePos));
+        temp.add(new Vector3f(carLeft).mul(-trackWidth));
+        temp.y = wheelRadius;
+        wheelPositions[2] = new Vector3f(temp);
+
+        temp.set(carPosition);
+        temp.add(new Vector3f(carForward).mul(rearAxlePos));
+        temp.add(new Vector3f(carLeft).mul(trackWidth));
+        temp.y = wheelRadius;
+        wheelPositions[3] = new Vector3f(temp);
     }
 
     public float getCurrentSteeringAngle()
@@ -127,35 +160,7 @@ public class Car {
 
     public Vector3f[] getWheelPositions()
     {
-        carLeft = new Vector3f(new Vector3f(carUp).cross(new Vector3f(carForward)));
-
-        Vector3f[] result = new Vector3f[4];
-        Vector3f temp = new Vector3f(0,0,0);
-
-        temp.set(carPosition);
-        temp.add(new Vector3f(carForward).mul(frontAxlePos));
-        temp.add(new Vector3f(carLeft).mul(-trackWidth));
-        temp.y = wheelRadius;
-        result[0] = new Vector3f(temp);
-
-        temp.set(carPosition);
-        temp.add(new Vector3f(carForward).mul(frontAxlePos));
-        temp.add(new Vector3f(carLeft).mul(trackWidth));
-        temp.y = wheelRadius;
-        result[1] = new Vector3f(temp);
-
-        temp.set(carPosition);
-        temp.add(new Vector3f(carForward).mul(rearAxlePos));
-        temp.add(new Vector3f(carLeft).mul(-trackWidth));
-        temp.y = wheelRadius;
-        result[2] = new Vector3f(temp);
-
-        temp.set(carPosition);
-        temp.add(new Vector3f(carForward).mul(rearAxlePos));
-        temp.add(new Vector3f(carLeft).mul(trackWidth));
-        temp.y = wheelRadius;
-        result[3] = new Vector3f(temp);
-        return result;
+        return wheelPositions;
     }
 
     public float getWheelRadius()
@@ -177,7 +182,5 @@ public class Car {
     {
         this.suspensionHeight = suspensionHeight;
     }
-
-
 
 }
