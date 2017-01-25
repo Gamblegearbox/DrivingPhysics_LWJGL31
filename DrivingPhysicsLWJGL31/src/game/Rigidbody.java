@@ -13,7 +13,6 @@ public class Rigidbody {
     private float speed = 0;
     private float mass = 10;
 
-
     public Rigidbody(Vector3f position, float mass)
     {
         this.position = position;
@@ -27,15 +26,16 @@ public class Rigidbody {
 
     public void update(float interval)
     {
-        float force = Physics.calcForce(mass, Physics.G);
-        float acceleration = Physics.calcAcceleration(mass, force);
-        speed += acceleration * interval;
+        if (position.y > 0.5f)
+        {
+            float force = Physics.calcForce(mass, Physics.G);
+            float acceleration = Physics.calcAcceleration(mass, force);
+            speed += acceleration * interval;
 
-        Vector3f velocity = new Vector3f(direction).mul(speed);
-        position.add(velocity.mul(interval));
-
-
-        if(position.y < 0.5f)
+            Vector3f velocity = new Vector3f(direction).mul(speed);
+            position.add(velocity.mul(interval));
+        }
+        else
         {
             position.y = 0.5f;
         }

@@ -7,91 +7,93 @@ import org.joml.Vector3f;
 public class Car {
 
     private final float maxSteeringAngle = 35f;
-
-    private final float frontAxlePos = 1.74f;
-    private final float rearAxlePos = -1.41f;
+    private final float wheelBase = 3.15f;
+    private final float halfWheelBase = wheelBase / 2f;
     private final float trackWidth = 0.8f;
-    private final float maxSpeed = 13.888888889f;
     private final float mass;
     private final float maxEngineForce;
     private final float maxBrakeForce;
 
-    private float currentSteeringAngle;
+    private float steeringAngle;
     private float wheelRadius;
     private float suspensionHeight;
-    private float currentCarAngle = 0;
+    private float carAngle;
 
-    private Vector3f carPosition;
-    private Vector3f carForward;
+    private Vector3f position;
+    private Vector3f forward;
+    private Vector3f steeringWheelForward;
     private Vector3f carUp;
-    private Vector3f carLeft;
+    private Vector3f left;
     private Vector3f[] wheelPositions;
 
     public float acceleration;
     public float speed;
-    public float kilometersPerHour;
     public float currentForce;
 
 
     public Car()
     {
         wheelRadius = 0.43f;
-        suspensionHeight = 0.2f;
+        suspensionHeight = 0.1f;
         mass = 2000f;
         maxEngineForce = 6000f;
         maxBrakeForce = 12000f;
-        currentSteeringAngle = 0;
+        steeringAngle = 0;
+        carAngle = 0;
 
-        carPosition = new Vector3f(0,0,0);
-        carForward = new Vector3f(0,0,1);
+        position = new Vector3f();
+        forward = new Vector3f();
+        steeringWheelForward = new Vector3f();
         carUp = new Vector3f(0,1,0);
-        carLeft = new Vector3f(1,0,0);
+        left = new Vector3f();
         wheelPositions = new Vector3f[4];
     }
 
     public void update(float throttleInput, float brakeInput, float steeringInput, int gear, float handbrake, float interval)
     {
-        //6 * interval IS ONE REV PER MIN ON THE WHEEL!! (6 degrees per second * 60(360 per minute) * interval)
-        if(Math.abs(currentSteeringAngle) <= maxSteeringAngle)
-        {
-            currentSteeringAngle = maxSteeringAngle * steeringInput;
-        }
-
-        //make sure that the car turns in the right direction when driving in reverse
-        if(speed >= 0)
-        {
-            currentCarAngle -= steeringInput;
-        }
-        else
-        {
-            currentCarAngle += steeringInput;
-        }
-
-        currentCarAngle %= 360f;
-
-        float degToRad = (float)Math.toRadians(currentCarAngle);
-        carForward.x = -(float)Math.sin(degToRad);
-        carForward.z = (float)Math.cos(degToRad);
-        carForward.normalize();
-        carLeft = new Vector3f(new Vector3f(carUp).cross(new Vector3f(carForward)));
-
+        steeringAngle = maxSteeringAngle * steeringInput;
         currentForce = maxEngineForce * throttleInput - maxBrakeForce * brakeInput;
+
         acceleration = Physics.calcAcceleration(mass, currentForce);
-
         speed += acceleration * interval;
-        if(speed > maxSpeed)
-        {
-            speed = maxSpeed;
-        }
-        else if(speed < -maxSpeed)
-        {
-            speed = -maxSpeed;
-        }
 
-        kilometersPerHour = Physics.metersPerSecondToKilometersPerHour(speed);
+        carAngle %= 360f;
+
+        float degToRad = (float)Math.toRadians(carAngle);
+        float degToRadInclSteering = (float)Math.toRadians(carAngle - steeringAngle);
+
+        steeringWheelForward.x = (float)Math.cos(degToRadInclSteering);
+        steeringWheelForward.z = (float)Math.sin(degToRadInclSteering);
+
+        forward.x = (float)Math.cos(degToRad);
+        forward.z = (float)Math.sin(degToRad);
+        left = new Vector3f(new Vector3f(carUp).cross(new Vector3f(forward)));
+
+        Vector3f frontWheel = new Vector3f(position).add(new Vector3f(forward).mul(halfWheelBase));
+        Vector3f rearWheel = new Vector3f(position).add(new Vector3f(forward).mul(-halfWheelBase));
+
+        frontWheel.add(new Vector3f(steeringWheelForward).mul(speed * interval));
+        rearWheel.add(new Vector3f(forward).mul(speed * interval));
+
+        Vector3f temp = new Vector3f(frontWheel).add(rearWheel);
+        temp.div(2f);
+        position = new Vector3f(temp);
+        float newCarAngleInRad = (float)Math.atan2(frontWheel.z - rearWheel.z, frontWheel.x - rearWheel.x);
+        carAngle = (float) Math.toDegrees(newCarAngleInRad);
+
+        frontWheel.y = wheelRadius;
+        rearWheel.y = wheelRadius;
+
+        wheelPositions[0] = new Vector3f(frontWheel).add(new Vector3f(left).mul(-trackWidth));
+        wheelPositions[1] = new Vector3f(frontWheel).add(new Vector3f(left).mul(trackWidth));
+        wheelPositions[2] = new Vector3f(rearWheel).add(new Vector3f(left).mul(-trackWidth));
+        wheelPositions[3] = new Vector3f(rearWheel).add(new Vector3f(left).mul(trackWidth));
+
+        position.y = wheelRadius + suspensionHeight;
 
         /*
         //TODO: MASSE MUSS MIT REIN!!
+        //6 * interval IS ONE REV PER MIN ON THE WHEEL!! (6 degrees per second * 60(360 per minute) * interval)
         float C_R = 0.4f;
         float C_H = 0.5f;
 
@@ -108,54 +110,21 @@ public class Car {
         }
         */
 
-        Vector3f velocity = new Vector3f(carForward).mul(speed);
-        carPosition.add(velocity.mul(interval));
-        carPosition.y = wheelRadius + suspensionHeight;
-        calcWheelPositions();
     }
 
-    private void calcWheelPositions()
+    public float getSteeringAngle()
     {
-        Vector3f temp = new Vector3f(0,0,0);
-
-        temp.set(carPosition);
-        temp.add(new Vector3f(carForward).mul(frontAxlePos));
-        temp.add(new Vector3f(carLeft).mul(-trackWidth));
-        temp.y = wheelRadius;
-        wheelPositions[0] = new Vector3f(temp);
-
-        temp.set(carPosition);
-        temp.add(new Vector3f(carForward).mul(frontAxlePos));
-        temp.add(new Vector3f(carLeft).mul(trackWidth));
-        temp.y = wheelRadius;
-        wheelPositions[1] = new Vector3f(temp);
-
-        temp.set(carPosition);
-        temp.add(new Vector3f(carForward).mul(rearAxlePos));
-        temp.add(new Vector3f(carLeft).mul(-trackWidth));
-        temp.y = wheelRadius;
-        wheelPositions[2] = new Vector3f(temp);
-
-        temp.set(carPosition);
-        temp.add(new Vector3f(carForward).mul(rearAxlePos));
-        temp.add(new Vector3f(carLeft).mul(trackWidth));
-        temp.y = wheelRadius;
-        wheelPositions[3] = new Vector3f(temp);
-    }
-
-    public float getCurrentSteeringAngle()
-    {
-        return currentSteeringAngle;
+        return steeringAngle;
     }
 
     public Vector3f getPosition()
     {
-        return carPosition;
+        return position;
     }
 
     public Vector3f getRotation()
     {
-        return new Vector3f(0, currentCarAngle, 0);
+        return new Vector3f(0, carAngle, 0);
     }
 
     public Vector3f[] getWheelPositions()
@@ -181,6 +150,11 @@ public class Car {
     public void setSuspensionHeight(float suspensionHeight)
     {
         this.suspensionHeight = suspensionHeight;
+    }
+
+    public float getSpeed()
+    {
+        return speed;
     }
 
 }

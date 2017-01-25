@@ -36,6 +36,8 @@ public class Game implements IGameLogic{
     private Rigidbody testCube;
     private GameItem testCubeMesh;
 
+    private GameItem forceArrow;
+
     private Vector3f lightDirection;
     private Scene scene;
     private Hud hud;
@@ -110,10 +112,9 @@ public class Game implements IGameLogic{
         carMesh.setPosition(car.getPosition());
         carMesh.setScale(1);
 
-        material = new Material(new Vector3f(0f, 1f, 0f), 0f);
+        material = new Material(new Vector3f(0f, 0.8f, 0.5f), 0f);
         mesh = OBJLoader.loadMesh("/models/REF_ONE_CUBIC_METER.obj");
         mesh.setMaterial(material);
-
 
         testCubeMesh = new GameItem(mesh);
         testCubeMesh.setPosition(0,25f,-15);
@@ -125,7 +126,25 @@ public class Game implements IGameLogic{
         GameItem cube3 = new GameItem(mesh);
         cube3.setPosition(4,0.5f,-15);
 
-        scene.setGameItems(new GameItem[]{ carMesh, ground, frontLeftMesh, frontRightMesh, rearLeftMesh, rearRightMesh, testCubeMesh, cube2, cube3 });
+        float[] positions = new float[] {
+                0.0f, 0.0f, 0.1f,
+                0.0f, 0.0f, -0.1f,
+                1.0f, 0.0f, 0.1f,
+                1.0f, 0.0f, -0.1f
+        };
+        float[] texCoords = new float[] {0, 1, 0, 1, 0, 1, 0, 1};
+        float[] normals = new float[] {
+                0,1,0,
+                0,1,0,
+                0,1,0,
+                0,1,0
+        };
+        int[] indices = new int[] {0,2,3,3,1,0};
+        mesh = new Mesh(positions, texCoords, normals, indices);
+        mesh.setMaterial(material);
+        forceArrow = new GameItem(mesh);
+
+        scene.setGameItems(new GameItem[]{ carMesh, ground, frontLeftMesh, frontRightMesh, rearLeftMesh, rearRightMesh, testCubeMesh, cube2, cube3, forceArrow });
 
     }
 
@@ -279,12 +298,12 @@ public class Game implements IGameLogic{
         Vector3f[] wheelPositions = car.getWheelPositions();
         Vector3f carRotation = car.getRotation();
         frontLeftMesh.setPosition(wheelPositions[0]);
-        frontLeftMesh.setRotation(carRotation.x, carRotation.y - car.getCurrentSteeringAngle(), carRotation.z);
+        frontLeftMesh.setRotation(carRotation.x, carRotation.y - car.getSteeringAngle(), carRotation.z);
         frontLeftMesh.getRotation().y += 180;
         frontLeftMesh.setScale(car.getWheelRadius() * 2.0f);
 
         frontRightMesh.setPosition(wheelPositions[1]);
-        frontRightMesh.setRotation(carRotation.x, carRotation.y - car.getCurrentSteeringAngle(), carRotation.z);
+        frontRightMesh.setRotation(carRotation.x, carRotation.y - car.getSteeringAngle(), carRotation.z);
         frontRightMesh.setScale(car.getWheelRadius() * 2.0f);
 
         rearLeftMesh.setPosition(wheelPositions[2]);
@@ -299,7 +318,12 @@ public class Game implements IGameLogic{
         testCube.update(interval);
         testCubeMesh.setPosition(testCube.getPosition());
 
-        hud.setStatusText("v: " + car.speed + " / a: " + car.acceleration + " / Force: " + car.currentForce + " / Km/h: " + car.kilometersPerHour);
+        forceArrow.setPosition(car.getPosition());
+        forceArrow.getPosition().y = 0.1f;
+        forceArrow.setRotation(carRotation);
+        forceArrow.setScale(car.acceleration);
+
+        hud.setStatusText("v: " + car.speed + " / a: " + car.acceleration + " / Force: " + car.currentForce + " / Km/h: " + Physics.metersPerSecondToKilometersPerHour(car.getSpeed()));
         //hud.setStatusText("Steering: " + steeringInput + " / Throttle: " + throttleInput + " / Brake: " + brakeInput);
     }
 
