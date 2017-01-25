@@ -26,6 +26,8 @@ public class Game implements IGameLogic{
     private final Camera camera;
     private final Vector3f cameraIncrement;
 
+    Texture texture;
+
     private Car car;
     private GameItem carMesh;
     private GameItem frontLeftMesh;
@@ -88,15 +90,14 @@ public class Game implements IGameLogic{
 
     private void setupGameItems() throws Exception
     {
-        Texture texture = new Texture("/textures/colors.png");
+        texture = new Texture("/textures/colors.png");
         Material material = new Material(new Vector3f(0.5f, 0.5f, 0.5f), 0f);
+        material.setTexture(texture);
         Mesh mesh = OBJLoader.loadMesh("/models/GroundPlane.obj");
         mesh.setMaterial(material);
         GameItem ground = new GameItem(mesh);
         ground.setPosition(0, 0, 0);
 
-        material = new Material(new Vector3f(0f, 0f, 0f), 1f);
-        material.setTexture(texture);
         mesh = OBJLoader.loadMesh("/models/Wheel_Offroad.obj");
         mesh.setMaterial(material);
         frontLeftMesh = new GameItem(mesh);
@@ -104,8 +105,6 @@ public class Game implements IGameLogic{
         rearLeftMesh = new GameItem(mesh);
         rearRightMesh = new GameItem(mesh);
 
-        material = new Material(new Vector3f(1f, 1f, 1f), 1f);
-        material.setTexture(texture);
         mesh = OBJLoader.loadMesh("/models/Car_Offroad.obj");
         mesh.setMaterial(material);
         carMesh = new GameItem(mesh);
