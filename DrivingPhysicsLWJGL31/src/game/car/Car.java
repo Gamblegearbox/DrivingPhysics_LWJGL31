@@ -1,8 +1,12 @@
 package game.car;
 
 import engine.Physics;
+import game.environment.GroundType;
+import game.environment.GroundTypes;
 import org.joml.Math;
 import org.joml.Vector3f;
+
+import java.lang.invoke.SwitchPoint;
 
 public class Car {
 
@@ -51,13 +55,17 @@ public class Car {
 
     public void update(float throttleInput, float brakeInput, float steeringInput, int gear, float handbrake, float interval)
     {
+        // get the current ground surface to calculate friction and stuff
+        GroundType currentGround = getGroundType();
+        System.out.println(currentGround.getType());
+
+        // use input to adjust steering and calculate force
         steeringAngle = maxSteeringAngle * steeringInput;
         currentForce = maxEngineForce * throttleInput - maxBrakeForce * brakeInput;
 
+        // change speed using the current acceleration
         acceleration = Physics.calcAcceleration(mass, currentForce);
         speed += acceleration * interval;
-
-        carAngle %= 360f;
 
         float degToRad = (float)Math.toRadians(carAngle);
         float degToRadInclSteering = (float)Math.toRadians(carAngle - steeringAngle);
@@ -80,7 +88,8 @@ public class Car {
         position = new Vector3f(temp);
         float newCarAngleInRad = (float)Math.atan2(frontWheel.z - rearWheel.z, frontWheel.x - rearWheel.x);
         carAngle = (float) Math.toDegrees(newCarAngleInRad);
-
+        carAngle %= 360f;
+        
         frontWheel.y = wheelRadius;
         rearWheel.y = wheelRadius;
 
@@ -109,6 +118,20 @@ public class Car {
             speed = 0;
         }
         */
+
+    }
+
+    private GroundType getGroundType()
+    {
+        float temp = position.x;
+        GroundType result;
+
+        if(temp <= -10){ result = GroundTypes.ROAD; }
+        else if(temp > -10 && temp <= 10) {result = GroundTypes.SAND_HARD; }
+        else if(temp > 10 && temp <= 30) {result = GroundTypes.SAND_SOFT; }
+        else {result = GroundTypes.SNOW; }
+
+        return result;
 
     }
 
