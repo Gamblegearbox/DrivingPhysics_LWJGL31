@@ -1,6 +1,6 @@
 package engine;
 
-import engine.gameItem.GameItem;
+import engine.gameEntities.GameEntity;
 import engine.texture.Texture;
 import org.joml.Vector3f;
 import org.lwjgl.BufferUtils;
@@ -147,13 +147,13 @@ public class Mesh {
         endRender();
     }
 
-    public void renderList(List<GameItem> gameItems, Consumer<GameItem> consumer)
+    public void renderList(List<GameEntity> gameEntities, Consumer<GameEntity> consumer)
     {
         initRender();
 
-        for (GameItem gameItem : gameItems) {
-            // Set up data requiered by gameItem
-            consumer.accept(gameItem);
+        for (GameEntity gameEntity : gameEntities) {
+            // Set up data requiered by gameEntity
+            consumer.accept(gameEntity);
             // Render this game item
             glDrawElements(GL_TRIANGLES, getVertexCount(), GL_UNSIGNED_INT, 0);
         }

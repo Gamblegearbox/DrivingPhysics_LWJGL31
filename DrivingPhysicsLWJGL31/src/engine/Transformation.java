@@ -1,8 +1,8 @@
 package engine;
 
+import engine.gameEntities.GameEntity;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
-import engine.gameItem.GameItem;
 
 public class Transformation {
 
@@ -104,40 +104,40 @@ public class Transformation {
         return ortho2DMatrix;
     }
 
-    public Matrix4f buildModelViewMatrix(GameItem gameItem, Matrix4f matrix)
+    public Matrix4f buildModelViewMatrix(GameEntity gameEntity, Matrix4f matrix)
     {
-        Vector3f rotation = gameItem.getRotation();
-        modelMatrix.identity().translate(gameItem.getPosition()).
+        Vector3f rotation = gameEntity.getRotation();
+        modelMatrix.identity().translate(gameEntity.getPosition()).
                 rotateX((float)Math.toRadians(-rotation.x)).
                 rotateY((float)Math.toRadians(-rotation.y)).
                 rotateZ((float)Math.toRadians(-rotation.z)).
-                scale(gameItem.getScale());
+                scale(gameEntity.getScale());
         modelViewMatrix.set(matrix);
 
         return modelViewMatrix.mul(modelMatrix);
     }
 
-    public Matrix4f buildModelLightViewMatrix(GameItem gameItem, Matrix4f matrix)
+    public Matrix4f buildModelLightViewMatrix(GameEntity gameEntity, Matrix4f matrix)
     {
-        Vector3f rotation = gameItem.getRotation();
-        modelLightMatrix.identity().translate(gameItem.getPosition()).
+        Vector3f rotation = gameEntity.getRotation();
+        modelLightMatrix.identity().translate(gameEntity.getPosition()).
                 rotateX((float)Math.toRadians(-rotation.x)).
                 rotateY((float)Math.toRadians(-rotation.y)).
                 rotateZ((float)Math.toRadians(-rotation.z)).
-                scale(gameItem.getScale());
+                scale(gameEntity.getScale());
         modelLightViewMatrix.set(matrix);
 
         return modelLightViewMatrix.mul(modelLightMatrix);
     }
 
-    public Matrix4f buildOrtoProjModelMatrix(GameItem gameItem, Matrix4f orthoMatrix)
+    public Matrix4f buildOrtoProjModelMatrix(GameEntity gameEntity, Matrix4f orthoMatrix)
     {
-        Vector3f rotation = gameItem.getRotation();
-        modelMatrix.identity().translate(gameItem.getPosition()).
+        Vector3f rotation = gameEntity.getRotation();
+        modelMatrix.identity().translate(gameEntity.getPosition()).
                 rotateX((float) Math.toRadians(-rotation.x)).
                 rotateY((float) Math.toRadians(-rotation.y)).
                 rotateZ((float) Math.toRadians(-rotation.z)).
-                scale(gameItem.getScale());
+                scale(gameEntity.getScale());
         orthoModelMatrix.set(orthoMatrix);
         orthoModelMatrix.mul(modelMatrix);
 

@@ -2,14 +2,16 @@ package game;
 
 import engine.*;
 import engine.Window;
+import engine.gameEntities.GameEntity;
 import engine.texture.Texture;
 import game.car.Car;
-import engine.gameItem.GameItem;
 import engine.light.DirectionalLight;
 import engine.light.SceneLight;
 import org.joml.Math;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
+
+import java.util.ArrayList;
 
 import static org.lwjgl.glfw.GLFW.*;
 
@@ -29,16 +31,16 @@ public class Game implements IGameLogic{
     Texture texture;
 
     private Car car;
-    private GameItem carMesh;
-    private GameItem frontLeftMesh;
-    private GameItem frontRightMesh;
-    private GameItem rearLeftMesh;
-    private GameItem rearRightMesh;
+    private GameEntity carMesh;
+    private GameEntity frontLeftMesh;
+    private GameEntity frontRightMesh;
+    private GameEntity rearLeftMesh;
+    private GameEntity rearRightMesh;
 
     private Rigidbody testCube;
-    private GameItem testCubeMesh;
+    private GameEntity testCubeMesh_1;
 
-    private GameItem forceArrow;
+    private GameEntity forceArrow;
 
     private Vector3f lightDirection;
     private Scene scene;
@@ -59,7 +61,7 @@ public class Game implements IGameLogic{
     private int totalInputCalls = 0;
     private float debugValue_0 = 0;
     private float debugValue_1 = 0;
-    private final float debugValueIncrease = 0.01f;
+    private final float debugValueIncrease = 1.0f;
 
 
     public Game()
@@ -73,12 +75,12 @@ public class Game implements IGameLogic{
     @Override
     public void init(Window window) throws Exception
     {
-        renderer.init(window);
+        renderer.init();
         scene = new Scene();
         car = new Car();
 
-        debugValue_0 = car.getSuspensionHeight();
-        debugValue_1 = car.getWheelRadius();
+        debugValue_0 = 0;
+        debugValue_1 = 0;
 
         setupGameItems();
         setupLight();
@@ -90,61 +92,83 @@ public class Game implements IGameLogic{
 
     private void setupGameItems() throws Exception
     {
+        // load color palette and apply it to material
         texture = new Texture("/textures/colorsFromPicture.png");
-        Material material = new Material(new Vector3f(0.5f, 0.5f, 0.5f), 0f);
-        material.setTexture(texture);
+        Material material = new Material(texture, 0f);
+
+        // create ground
         Mesh mesh = OBJLoader.loadMesh("/models/GroundPlane.obj");
         mesh.setMaterial(material);
-        GameItem ground = new GameItem(mesh);
+        GameEntity ground = new GameEntity(mesh);
         ground.setPosition(0, 0, 0);
 
-        mesh = OBJLoader.loadMesh("/models/Wheel_Offroad.obj");
-        mesh.setMaterial(material);
-        frontLeftMesh = new GameItem(mesh);
-        frontRightMesh = new GameItem(mesh);
-        rearLeftMesh = new GameItem(mesh);
-        rearRightMesh = new GameItem(mesh);
-
+        // create car with wheels
         mesh = OBJLoader.loadMesh("/models/Car_Offroad.obj");
         mesh.setMaterial(material);
-        carMesh = new GameItem(mesh);
+        carMesh = new GameEntity(mesh);
         carMesh.setPosition(car.getPosition());
         carMesh.setScale(1);
 
-        material = new Material(new Vector3f(0f, 0.8f, 0.5f), 0f);
-        mesh = OBJLoader.loadMesh("/models/REF_ONE_CUBIC_METER.obj");
+        mesh = OBJLoader.loadMesh("/models/Wheel_Offroad.obj");
         mesh.setMaterial(material);
+        frontLeftMesh = new GameEntity(mesh);
+        frontRightMesh = new GameEntity(mesh);
+        rearLeftMesh = new GameEntity(mesh);
+        rearRightMesh = new GameEntity(mesh);
 
-        testCubeMesh = new GameItem(mesh);
-        testCubeMesh.setPosition(0,25f,-15);
-        testCube = new Rigidbody(testCubeMesh.getPosition(), 1f);
+        // add objects to List of GameItems
+        ArrayList<GameEntity> gameEntities = new ArrayList<>();
+        gameEntities.add(ground);
+        gameEntities.add(carMesh);
+        gameEntities.add(frontLeftMesh);
+        gameEntities.add(frontRightMesh);
+        gameEntities.add(rearLeftMesh);
+        gameEntities.add(rearRightMesh);
 
-        GameItem cube2 = new GameItem(mesh);
-        cube2.setPosition(2,0.5f,-15);
+        // create debug objects
+        if(DEBUG)
+        {
+            material = new Material(new Vector3f(0.8f, 0.0f, 0.0f), 1f);
+            mesh = OBJLoader.loadMesh("/models/REF_ONE_CUBIC_METER.obj");
+            mesh.setMaterial(material);
 
-        GameItem cube3 = new GameItem(mesh);
-        cube3.setPosition(4,0.5f,-15);
+            testCubeMesh_1 = new GameEntity(mesh);
+            testCubeMesh_1.setPosition(0, 25f, -15);
+            testCube = new Rigidbody(testCubeMesh_1.getPosition(), 1f);
 
-        float[] positions = new float[] {
-                0.0f, 0.0f, 0.1f,
-                0.0f, 0.0f, -0.1f,
-                1.0f, 0.0f, 0.1f,
-                1.0f, 0.0f, -0.1f
-        };
-        float[] texCoords = new float[] {0, 1, 0, 1, 0, 1, 0, 1};
-        float[] normals = new float[] {
-                0,1,0,
-                0,1,0,
-                0,1,0,
-                0,1,0
-        };
-        int[] indices = new int[] {0,2,3,3,1,0};
-        mesh = new Mesh(positions, texCoords, normals, indices);
-        mesh.setMaterial(material);
-        forceArrow = new GameItem(mesh);
+            GameEntity testCubeMesh_2 = new GameEntity(mesh);
+            testCubeMesh_2.setPosition(2, 0.5f, -15);
 
-        scene.setGameItems(new GameItem[]{ carMesh, ground, frontLeftMesh, frontRightMesh, rearLeftMesh, rearRightMesh, testCubeMesh, cube2, cube3, forceArrow });
+            GameEntity testCubeMesh_3 = new GameEntity(mesh);
+            testCubeMesh_3.setPosition(4, 0.5f, -15);
 
+
+            float[] positions = new float[]{
+                    0.0f, 0.0f, 0.1f,
+                    0.0f, 0.0f, -0.1f,
+                    1.0f, 0.0f, 0.1f,
+                    1.0f, 0.0f, -0.1f
+            };
+            float[] texCoords = new float[]{0, 1, 0, 1, 0, 1, 0, 1};
+            float[] normals = new float[]{
+                    0, 1, 0,
+                    0, 1, 0,
+                    0, 1, 0,
+                    0, 1, 0
+            };
+            int[] indices = new int[]{0, 2, 3, 3, 1, 0};
+            mesh = new Mesh(positions, texCoords, normals, indices);
+            mesh.setMaterial(material);
+            forceArrow = new GameEntity(mesh);
+
+            gameEntities.add(forceArrow);
+            gameEntities.add(testCubeMesh_1);
+            gameEntities.add(testCubeMesh_2);
+            gameEntities.add(testCubeMesh_3);
+        }
+
+        // add objects to scene
+        scene.setGameItems(gameEntities);
     }
 
     private void setupLight()
@@ -169,29 +193,6 @@ public class Game implements IGameLogic{
     @Override
     public void input(Window window, MouseInput mouseInput)
     {
-        if(DEBUG)
-        {
-            totalInputCalls++;
-
-            if (window.isKeyPressed(GLFW_KEY_R))
-            {
-                debugValue_0 += debugValueIncrease;
-            }
-            else if (window.isKeyPressed(GLFW_KEY_F))
-            {
-                debugValue_0 -= debugValueIncrease;
-            }
-
-            if (window.isKeyPressed(GLFW_KEY_T))
-            {
-                debugValue_1 += debugValueIncrease;
-            }
-            else if (window.isKeyPressed(GLFW_KEY_G))
-            {
-                debugValue_1 -= debugValueIncrease;
-            }
-        }
-
         float cameraSpeed = window.isKeyPressed(GLFW_KEY_LEFT_SHIFT) ? 5f : 2f;
 
         cameraIncrement.set(0, 0, 0);
@@ -272,55 +273,76 @@ public class Game implements IGameLogic{
                 steeringInput = 0;
             }
         }
+
+        if(DEBUG)
+        {
+            totalInputCalls++;
+
+            if (window.isKeyPressed(GLFW_KEY_R))
+            {
+                debugValue_0 += debugValueIncrease;
+            }
+            else if (window.isKeyPressed(GLFW_KEY_F))
+            {
+                debugValue_0 -= debugValueIncrease;
+            }
+
+            if (window.isKeyPressed(GLFW_KEY_T))
+            {
+                debugValue_1 += debugValueIncrease;
+            }
+            else if (window.isKeyPressed(GLFW_KEY_G))
+            {
+                debugValue_1 -= debugValueIncrease;
+            }
+        }
+
     }
 
     @Override
     public void update(float interval, MouseInput mouseInput)
     {
-        if(DEBUG)
-        {
-            totalUpdates++;
-        }
-
         updateCameraAndCompass(mouseInput, interval);
         updateDirectionalLight();
 
-        //car.setSuspensionHeight(debugValue_0);
-        //car.setWheelRadius(debugValue_1);
         car.update(throttleInput, brakeInput, steeringInput, gear, handbrakeInput, interval, debugValue_0, debugValue_1);
-
         carMesh.setPosition(car.getPosition());
         carMesh.setRotation(car.getRotation());
 
         Vector3f[] wheelPositions = car.getWheelPositions();
         Vector3f carRotation = car.getRotation();
-        frontLeftMesh.setPosition(wheelPositions[0]);
+        frontLeftMesh.setPosition(wheelPositions[1]);
         frontLeftMesh.setRotation(carRotation.x, carRotation.y - car.getSteeringAngle(), carRotation.z);
-        frontLeftMesh.getRotation().y += 180;
         frontLeftMesh.setScale(car.getWheelRadius() * 2.0f);
 
-        frontRightMesh.setPosition(wheelPositions[1]);
+        frontRightMesh.setPosition(wheelPositions[0]);
         frontRightMesh.setRotation(carRotation.x, carRotation.y - car.getSteeringAngle(), carRotation.z);
+        frontRightMesh.getRotation().y += 180;
         frontRightMesh.setScale(car.getWheelRadius() * 2.0f);
 
-        rearLeftMesh.setPosition(wheelPositions[2]);
+        rearLeftMesh.setPosition(wheelPositions[3]);
         rearLeftMesh.setRotation(carRotation);
-        rearLeftMesh.getRotation().y += 180;
         rearLeftMesh.setScale(car.getWheelRadius() * 2.0f);
 
-        rearRightMesh.setPosition(wheelPositions[3]);
+        rearRightMesh.setPosition(wheelPositions[2]);
         rearRightMesh.setRotation(carRotation);
+        rearRightMesh.getRotation().y += 180;
         rearRightMesh.setScale(car.getWheelRadius() * 2.0f);
 
-        testCube.update(interval);
-        testCubeMesh.setPosition(testCube.getPosition());
-
-        forceArrow.setPosition(car.getPosition());
-        forceArrow.getPosition().y = 0.1f;
-        forceArrow.setRotation(carRotation);
-        forceArrow.setScale(car.acceleration);
-
         hud.setStatusText("v: " + car.speed + " / a: " + car.acceleration + " / Force: " + car.currentForce + " / Km/h: " + Physics.metersPerSecondToKilometersPerHour(car.getSpeed()));
+
+        if(DEBUG)
+        {
+            totalUpdates++;
+
+            testCube.update(interval);
+            testCubeMesh_1.setPosition(testCube.getPosition());
+
+            forceArrow.setPosition(car.getPosition());
+            forceArrow.getPosition().y = 0.1f;
+            forceArrow.setRotation(carRotation);
+            forceArrow.setScale(car.acceleration);
+        }
     }
 
     private void updateCameraAndCompass(MouseInput mouseInput, float interval)
@@ -403,13 +425,13 @@ public class Game implements IGameLogic{
     @Override
     public void render(Window window)
     {
+        hud.updateSize(window);
+        renderer.render(window, camera, scene, hud);
+
         if(DEBUG)
         {
             totalRenderCycles++;
         }
-
-        hud.updateSize(window);
-        renderer.render(window, camera, scene, hud);
     }
 
     @Override
@@ -426,6 +448,5 @@ public class Game implements IGameLogic{
             System.out.println("Render Cycles: " + totalRenderCycles);
         }
     }
-
 
 }

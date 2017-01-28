@@ -1,23 +1,23 @@
-package engine.gameItem;
+package engine.gameEntities;
 
 import engine.Mesh;
 import org.joml.Vector3f;
 
-public class GameItem {
+public class GameEntity {
 
     private Mesh mesh;
     private final Vector3f position;
     private final Vector3f rotation;
     private float scale;
 
-    public GameItem()
+    public GameEntity()
     {
         position = new Vector3f(0, 0, 0);
         scale = 1;
         rotation = new Vector3f(0, 0, 0);
     }
 
-    public GameItem(Mesh mesh)
+    public GameEntity(Mesh mesh)
     {
         this();
         this.mesh = mesh;

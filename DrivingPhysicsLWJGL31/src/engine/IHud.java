@@ -1,18 +1,18 @@
 package engine;
 
-import engine.gameItem.GameItem;
+import engine.gameEntities.GameEntity;
 
 public interface IHud {
 
-    GameItem[] getGameItems();
+    GameEntity[] getGameEntities();
 
     default void cleanup()
     {
-        GameItem[] gameItems = getGameItems();
+        GameEntity[] gameEntities = getGameEntities();
 
-        for(GameItem gameItem : gameItems)
+        for(GameEntity gameEntity : gameEntities)
         {
-            gameItem.getMesh().cleanUp();
+            gameEntity.getMesh().cleanUp();
         }
     }
 }

@@ -1,6 +1,5 @@
 package game.environment;
 
-import jdk.internal.org.xml.sax.SAXNotRecognizedException;
 
 public class GroundType {
 

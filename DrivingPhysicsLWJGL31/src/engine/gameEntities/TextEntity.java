@@ -1,4 +1,4 @@
-package engine.gameItem;
+package engine.gameEntities;
 
 import engine.Utils;
 import engine.Material;
@@ -9,7 +9,7 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 
-public class TextItem extends GameItem{
+public class TextEntity extends GameEntity {
 
     private static final float ZPOS = 0.0f;
     private static final int VERTICES_PER_QUAD = 4;
@@ -18,7 +18,7 @@ public class TextItem extends GameItem{
     private String text;
 
 
-    public TextItem(String text, String fontFileName, int numCols, int numRows) throws Exception
+    public TextEntity(String text, String fontFileName, int numCols, int numRows) throws Exception
     {
         super();
         this.text = text;
