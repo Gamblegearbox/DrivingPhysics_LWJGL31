@@ -15,7 +15,7 @@ import static org.lwjgl.glfw.GLFW.*;
 
 public class Game implements IGameLogic{
 
-    private static final boolean DEBUG = true;
+    public static final boolean DEBUG = true;
     private static final float MOUSE_SENSITIVITY = 0.2f;
     private static final float INPUT_PEDAL_INCREASE = 0.05f;
     private static final float INPUT_PEDAL_DECREASE = 0.075f;
@@ -90,7 +90,7 @@ public class Game implements IGameLogic{
 
     private void setupGameItems() throws Exception
     {
-        texture = new Texture("/textures/colors.png");
+        texture = new Texture("/textures/colorsFromPicture.png");
         Material material = new Material(new Vector3f(0.5f, 0.5f, 0.5f), 0f);
         material.setTexture(texture);
         Mesh mesh = OBJLoader.loadMesh("/models/GroundPlane.obj");
@@ -241,8 +241,6 @@ public class Game implements IGameLogic{
             }
         }
 
-
-
         if (window.isKeyPressed(GLFW_KEY_LEFT))
         {
             steeringInput += INPUT_STEERING_SPEED;
@@ -287,9 +285,9 @@ public class Game implements IGameLogic{
         updateCameraAndCompass(mouseInput, interval);
         updateDirectionalLight();
 
-        car.setSuspensionHeight(debugValue_0);
-        car.setWheelRadius(debugValue_1);
-        car.update(throttleInput, brakeInput, steeringInput, gear, handbrakeInput, interval);
+        //car.setSuspensionHeight(debugValue_0);
+        //car.setWheelRadius(debugValue_1);
+        car.update(throttleInput, brakeInput, steeringInput, gear, handbrakeInput, interval, debugValue_0, debugValue_1);
 
         carMesh.setPosition(car.getPosition());
         carMesh.setRotation(car.getRotation());
@@ -323,7 +321,6 @@ public class Game implements IGameLogic{
         forceArrow.setScale(car.acceleration);
 
         hud.setStatusText("v: " + car.speed + " / a: " + car.acceleration + " / Force: " + car.currentForce + " / Km/h: " + Physics.metersPerSecondToKilometersPerHour(car.getSpeed()));
-        //hud.setStatusText("Steering: " + steeringInput + " / Throttle: " + throttleInput + " / Brake: " + brakeInput);
     }
 
     private void updateCameraAndCompass(MouseInput mouseInput, float interval)
