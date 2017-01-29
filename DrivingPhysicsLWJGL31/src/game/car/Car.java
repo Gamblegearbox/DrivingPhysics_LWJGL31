@@ -1,6 +1,6 @@
 package game.car;
 
-import engine.Physics;
+import engine.utils.Physics;
 import game.Game;
 import game.environment.GroundType;
 import game.environment.GroundTypes;
@@ -77,8 +77,8 @@ public class Car {
         acceleration = Physics.calcAcceleration(mass, currentForce);
         speed += acceleration * interval;
 
-
-        /*// reduce speed due to friction
+        // reduce speed due to friction
+        /*
         //TODO: MASSE MUSS MIT REIN!!
         //6 * interval IS ONE REV PER MIN ON THE WHEEL!! (6 degrees per second * 60(360 per minute) * interval)
         float C_R = 0.4f;
@@ -124,9 +124,6 @@ public class Car {
         rearWheel.add(new Vector3f(forward).mul(speed * interval));
         rearWheel.add(new Vector3f(left).mul(radialAcceleration * 1.5f * interval));
 
-
-
-
         Vector3f temp = new Vector3f(frontWheel).add(rearWheel);
         temp.div(2f);
         position = new Vector3f(temp);
@@ -143,7 +140,6 @@ public class Car {
         wheelPositions[3] = new Vector3f(rearWheel).add(new Vector3f(left).mul(trackWidth));
 
         position.y = wheelRadius + suspensionHeight;
-
     }
 
     private GroundType getGroundType()
@@ -157,7 +153,6 @@ public class Car {
         else {result = GroundTypes.SNOW; }
 
         return result;
-
     }
 
     public float getSteeringAngle()

@@ -1,4 +1,4 @@
-package engine;
+package engine.shading;
 
 import engine.texture.Texture;
 import org.joml.Vector3f;

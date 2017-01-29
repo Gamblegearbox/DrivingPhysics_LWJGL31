@@ -1,9 +1,14 @@
-package engine;
+package engine.core;
 
+import engine.camera.Camera;
 import engine.gameEntities.GameEntity;
+import engine.mesh.Mesh;
+import engine.interfaces.IHud;
 import engine.light.DirectionalLight;
-import engine.light.SceneLight;
-import engine.shader.ShaderProgram;
+import engine.scene.SceneLight;
+import engine.scene.Scene;
+import engine.shading.ShaderProgram;
+import engine.utils.Utils;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
@@ -70,7 +75,7 @@ public class Renderer {
 
     private void setupSceneShader() throws Exception
     {
-        // Create shader
+        // Create shading
         sceneShaderProgram = new ShaderProgram();
         sceneShaderProgram.createVertexShader(Utils.loadResource("/shaders/scene.vs"));
         sceneShaderProgram.createFragmentShader(Utils.loadResource("/shaders/scene.fs"));

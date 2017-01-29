@@ -1,4 +1,7 @@
-package engine;
+package engine.interfaces;
+
+import engine.core.Window;
+import engine.input.MouseInput;
 
 public interface IGameLogic {
 

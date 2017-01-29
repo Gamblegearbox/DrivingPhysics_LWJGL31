@@ -1,5 +1,6 @@
-package engine.light;
+package engine.scene;
 
+import engine.light.DirectionalLight;
 import org.joml.Vector3f;
 
 public class SceneLight {

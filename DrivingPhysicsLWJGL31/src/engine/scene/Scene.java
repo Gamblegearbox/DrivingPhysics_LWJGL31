@@ -1,7 +1,7 @@
-package engine;
+package engine.scene;
 
+import engine.mesh.Mesh;
 import engine.gameEntities.GameEntity;
-import engine.light.SceneLight;
 
 import java.util.ArrayList;
 import java.util.HashMap;

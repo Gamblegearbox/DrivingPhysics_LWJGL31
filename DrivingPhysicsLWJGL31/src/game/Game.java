@@ -1,12 +1,20 @@
 package game;
 
-import engine.*;
-import engine.Window;
+import engine.camera.Camera;
+import engine.core.Window;
+import engine.core.Renderer;
 import engine.gameEntities.GameEntity;
+import engine.mesh.Mesh;
+import engine.interfaces.IGameLogic;
+import engine.scene.Scene;
+import engine.shading.Material;
 import engine.texture.Texture;
+import engine.input.MouseInput;
+import engine.utils.OBJLoader;
+import engine.utils.Physics;
 import game.car.Car;
 import engine.light.DirectionalLight;
-import engine.light.SceneLight;
+import engine.scene.SceneLight;
 import org.joml.Math;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
@@ -15,7 +23,7 @@ import java.util.ArrayList;
 
 import static org.lwjgl.glfw.GLFW.*;
 
-public class Game implements IGameLogic{
+public class Game implements IGameLogic {
 
     public static final boolean DEBUG = true;
     private static final float MOUSE_SENSITIVITY = 0.2f;
@@ -28,7 +36,7 @@ public class Game implements IGameLogic{
     private final Camera camera;
     private final Vector3f cameraIncrement;
 
-    Texture texture;
+    private Texture texture;
 
     private Car car;
     private GameEntity carMesh;
@@ -37,7 +45,7 @@ public class Game implements IGameLogic{
     private GameEntity rearLeftMesh;
     private GameEntity rearRightMesh;
 
-    private Rigidbody testCube;
+    private PROTO_Rigidbody testCube;
     private GameEntity testCubeMesh_1;
 
     private GameEntity forceArrow;
@@ -47,7 +55,6 @@ public class Game implements IGameLogic{
     private Hud hud;
 
     private float directionalLightAngle;
-
     private float throttleInput = 0;
     private float brakeInput = 0;
     private float steeringInput = 0;
@@ -63,13 +70,12 @@ public class Game implements IGameLogic{
     private float debugValue_1 = 0;
     private final float debugValueIncrease = 1.0f;
 
-
     public Game()
     {
         renderer = new Renderer();
         camera = new Camera();
         cameraIncrement = new Vector3f(0, 0, 0);
-        directionalLightAngle = 45;
+        directionalLightAngle = 35;
     }
 
     @Override
@@ -128,13 +134,13 @@ public class Game implements IGameLogic{
         // create debug objects
         if(DEBUG)
         {
-            material = new Material(new Vector3f(0.8f, 0.0f, 0.0f), 1f);
+            material = new Material(new Vector3f(0.8f, 0.0f, 0.0f), 0f);
             mesh = OBJLoader.loadMesh("/models/REF_ONE_CUBIC_METER.obj");
             mesh.setMaterial(material);
 
             testCubeMesh_1 = new GameEntity(mesh);
             testCubeMesh_1.setPosition(0, 25f, -15);
-            testCube = new Rigidbody(testCubeMesh_1.getPosition(), 1f);
+            testCube = new PROTO_Rigidbody(testCubeMesh_1.getPosition(), 1f);
 
             GameEntity testCubeMesh_2 = new GameEntity(mesh);
             testCubeMesh_2.setPosition(2, 0.5f, -15);

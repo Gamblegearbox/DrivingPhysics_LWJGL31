@@ -1,8 +1,8 @@
 package engine.gameEntities;
 
-import engine.Utils;
-import engine.Material;
-import engine.Mesh;
+import engine.mesh.Mesh;
+import engine.utils.Utils;
+import engine.shading.Material;
 import engine.texture.Texture;
 
 import java.nio.charset.Charset;

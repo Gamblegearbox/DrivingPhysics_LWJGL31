@@ -1,6 +1,6 @@
 package engine.gameEntities;
 
-import engine.Mesh;
+import engine.mesh.Mesh;
 import org.joml.Vector3f;
 
 public class GameEntity {

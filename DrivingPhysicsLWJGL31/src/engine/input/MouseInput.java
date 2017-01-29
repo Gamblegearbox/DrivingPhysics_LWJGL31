@@ -1,5 +1,6 @@
-package engine;
+package engine.input;
 
+import engine.core.Window;
 import org.joml.Vector2d;
 import org.joml.Vector2f;
 import org.lwjgl.glfw.GLFWCursorEnterCallback;

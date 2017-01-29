@@ -1,6 +1,5 @@
-package engine.shader;
+package engine.shading;
 
-import engine.Material;
 import engine.light.DirectionalLight;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
@@ -134,7 +133,7 @@ public class ShaderProgram {
     {
         int shaderId = glCreateShader(shaderType);
         if (shaderId == 0) {
-            throw new Exception("Error creating shader. Code: " + shaderId);
+            throw new Exception("Error creating shading. Code: " + shaderId);
         }
 
         glShaderSource(shaderId, shaderCode);

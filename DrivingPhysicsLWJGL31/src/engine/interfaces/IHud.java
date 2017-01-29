@@ -1,4 +1,4 @@
-package engine;
+package engine.interfaces;
 
 import engine.gameEntities.GameEntity;
 

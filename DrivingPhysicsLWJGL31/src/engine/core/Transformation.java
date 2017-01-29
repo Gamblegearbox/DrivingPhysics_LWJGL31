@@ -1,5 +1,6 @@
-package engine;
+package engine.core;
 
+import engine.camera.Camera;
 import engine.gameEntities.GameEntity;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;

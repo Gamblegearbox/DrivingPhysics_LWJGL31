@@ -1,4 +1,4 @@
-package engine;
+package engine.camera;
 
 import org.joml.Vector3f;
 

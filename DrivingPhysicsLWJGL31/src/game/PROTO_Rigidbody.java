@@ -1,19 +1,19 @@
 package game;
 
-import engine.Physics;
+import engine.utils.Physics;
 import org.joml.Vector3f;
 
 /**
  * Created by Pete on 23/01/2017.
  */
-public class Rigidbody {
+public class PROTO_Rigidbody {
 
     private Vector3f position;
     private Vector3f direction = new Vector3f(0, -1, 0);
     private float speed = 0;
     private float mass = 10;
 
-    public Rigidbody(Vector3f position, float mass)
+    public PROTO_Rigidbody(Vector3f position, float mass)
     {
         this.position = position;
         this.mass = mass;

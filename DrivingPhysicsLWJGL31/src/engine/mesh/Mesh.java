@@ -1,6 +1,7 @@
-package engine;
+package engine.mesh;
 
 import engine.gameEntities.GameEntity;
+import engine.shading.Material;
 import engine.texture.Texture;
 import org.joml.Vector3f;
 import org.lwjgl.BufferUtils;

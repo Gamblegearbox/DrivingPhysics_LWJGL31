@@ -1,5 +1,8 @@
-package engine;
+package engine.core;
 
+
+import engine.interfaces.IGameLogic;
+import engine.input.MouseInput;
 
 public class GameEngine implements Runnable{
 

@@ -1,4 +1,4 @@
-package engine.shader;
+package engine.shading;
 
 import java.nio.FloatBuffer;
 
