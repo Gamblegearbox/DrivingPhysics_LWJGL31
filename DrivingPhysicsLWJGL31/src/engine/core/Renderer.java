@@ -27,8 +27,8 @@ public class Renderer {
     private static final float Z_NEAR = 0.01f;
     private static final float Z_FAR = 1000.f;
 
+    private final float specularPower = 64f;
     private final Transformation transformation;
-    private final float specularPower;
 
     private ShaderProgram sceneShaderProgram;
     private ShaderProgram hudShaderProgram;
@@ -37,7 +37,6 @@ public class Renderer {
     public Renderer()
     {
         transformation = new Transformation();
-        specularPower = 64f;
     }
 
     public void init() throws Exception
@@ -47,30 +46,25 @@ public class Renderer {
         setupHudShader();
     }
 
-    public void render(Window window, Camera camera, Scene scene, IHud hud)
-    {
-        clear();
-        glViewport(0, 0, window.getWidth(), window.getHeight());
-
-        // Update projection and view matrices once per render cycle
-        transformation.updateProjectionMatrix(FOV, window.getWidth(), window.getHeight(), Z_NEAR, Z_FAR);
-        transformation.updateViewMatrix(camera);
-
-        renderScene(scene);
-        renderHud(window, hud);
-    }
 
     private void setupOpenGL()
     {
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glEnable(GL_DEPTH_TEST);
-        //glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
-
+        glEnable(GL_STENCIL_TEST);
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-        glEnable(GL_CULL_FACE);
-        glCullFace(GL_BACK);
+        if(GraphicOptions.SHOW_TRIANGLES)
+        {
+            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        }
+
+        if(GraphicOptions.CULLFACE)
+        {
+            glEnable(GL_CULL_FACE);
+            glCullFace(GL_BACK);
+        }
     }
 
     private void setupSceneShader() throws Exception
@@ -114,9 +108,27 @@ public class Renderer {
         hudShaderProgram.createUniform("hasTexture");
     }
 
+    public void render(Window window, Camera camera, Scene scene, IHud hud)
+    {
+        clear();
+
+        glViewport(0, 0, window.getWidth(), window.getHeight());
+
+        // Update projection and view matrices once per render cycle
+        transformation.updateProjectionMatrix(FOV, window.getWidth(), window.getHeight(), Z_NEAR, Z_FAR);
+        transformation.updateViewMatrix(camera);
+
+        renderScene(scene);
+        renderHud(window, hud);
+        if(GraphicOptions.COMPATIBLE_PROFILE)
+        {
+            renderCompatibleProfileStuff();
+        }
+    }
+
     public void clear()
     {
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
     }
 
     public void renderScene(Scene scene)
@@ -125,15 +137,10 @@ public class Renderer {
 
         Matrix4f projectionMatrix = transformation.getProjectionMatrix();
         sceneShaderProgram.setUniform("projectionMatrix", projectionMatrix);
-        Matrix4f orthoProjMatrix = transformation.getOrthoProjectionMatrix();
-        sceneShaderProgram.setUniform("orthoProjectionMatrix", orthoProjMatrix);
-        Matrix4f lightViewMatrix = transformation.getLightViewMatrix();
-
         Matrix4f viewMatrix = transformation.getViewMatrix();
 
         SceneLight sceneLight = scene.getSceneLight();
         renderLights(viewMatrix, sceneLight);
-
 
         sceneShaderProgram.setUniform("texture_sampler", 0);
         sceneShaderProgram.setUniform("normalMap", 1);
@@ -149,8 +156,6 @@ public class Renderer {
             mesh.renderList(mapMeshes.get(mesh), (GameEntity gameEntity) -> {
                         Matrix4f modelViewMatrix = transformation.buildModelViewMatrix(gameEntity, viewMatrix);
                         sceneShaderProgram.setUniform("modelViewMatrix", modelViewMatrix);
-                        Matrix4f modelLightViewMatrix = transformation.buildModelLightViewMatrix(gameEntity, lightViewMatrix);
-                        sceneShaderProgram.setUniform("modelLightViewMatrix", modelLightViewMatrix);
                     }
             );
         }
@@ -191,6 +196,32 @@ public class Renderer {
 
             hudShaderProgram.unbind();
         }
+    }
+
+    public void renderCompatibleProfileStuff()
+    {
+        glPushMatrix();
+        glLoadIdentity();
+
+        float inc = 0.05f;
+        glLineWidth(2.0f);
+
+        glBegin(GL_LINES);
+
+        glColor3f(1.0f, 1.0f, 1.0f);
+
+        // Horizontal line
+        glVertex3f(-inc, 0.0f, 0.0f);
+        glVertex3f(+inc, 0.0f, 0.0f);
+        glEnd();
+
+        // Vertical line
+        glBegin(GL_LINES);
+        glVertex3f(0.0f, -inc, 0.0f);
+        glVertex3f(0.0f, +inc, 0.0f);
+        glEnd();
+
+        glPopMatrix();
     }
 
     public void cleanup()

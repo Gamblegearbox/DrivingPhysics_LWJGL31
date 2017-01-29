@@ -1,6 +1,7 @@
 package game;
 
 import engine.camera.Camera;
+import engine.core.GraphicOptions;
 import engine.core.Window;
 import engine.core.Renderer;
 import engine.gameEntities.GameEntity;
@@ -48,7 +49,8 @@ public class Game implements IGameLogic {
     private PROTO_Rigidbody testCube;
     private GameEntity testCubeMesh_1;
 
-    private GameEntity forceArrow;
+    private GameEntity debugArrowForward;
+    private GameEntity debugArrowLeft;
 
     private Vector3f lightDirection;
     private Scene scene;
@@ -148,7 +150,6 @@ public class Game implements IGameLogic {
             GameEntity testCubeMesh_3 = new GameEntity(mesh);
             testCubeMesh_3.setPosition(4, 0.5f, -15);
 
-
             float[] positions = new float[]{
                     0.0f, 0.0f, 0.1f,
                     0.0f, 0.0f, -0.1f,
@@ -165,9 +166,14 @@ public class Game implements IGameLogic {
             int[] indices = new int[]{0, 2, 3, 3, 1, 0};
             mesh = new Mesh(positions, texCoords, normals, indices);
             mesh.setMaterial(material);
-            forceArrow = new GameEntity(mesh);
+            debugArrowForward = new GameEntity(mesh);
 
-            gameEntities.add(forceArrow);
+            mesh.setMaterial(new Material(new Vector3f(0, 0.8f, 0f), 0f));
+            debugArrowLeft = new GameEntity(mesh);
+            debugArrowLeft.setRotation(0, 90f, 0);
+
+            gameEntities.add(debugArrowForward);
+            gameEntities.add(debugArrowLeft);
             gameEntities.add(testCubeMesh_1);
             gameEntities.add(testCubeMesh_2);
             gameEntities.add(testCubeMesh_3);
@@ -301,6 +307,7 @@ public class Game implements IGameLogic {
             {
                 debugValue_1 -= debugValueIncrease;
             }
+
         }
 
     }
@@ -315,23 +322,24 @@ public class Game implements IGameLogic {
         carMesh.setPosition(car.getPosition());
         carMesh.setRotation(car.getRotation());
 
+        float wheelRotation = car.getWheelRotation();
         Vector3f[] wheelPositions = car.getWheelPositions();
         Vector3f carRotation = car.getRotation();
         frontLeftMesh.setPosition(wheelPositions[1]);
-        frontLeftMesh.setRotation(carRotation.x, carRotation.y - car.getSteeringAngle(), carRotation.z);
+        frontLeftMesh.setRotation(carRotation.x, carRotation.y - car.getSteeringAngle(), wheelRotation);
         frontLeftMesh.setScale(car.getWheelRadius() * 2.0f);
 
         frontRightMesh.setPosition(wheelPositions[0]);
-        frontRightMesh.setRotation(carRotation.x, carRotation.y - car.getSteeringAngle(), carRotation.z);
+        frontRightMesh.setRotation(carRotation.x, carRotation.y - car.getSteeringAngle(), -wheelRotation);
         frontRightMesh.getRotation().y += 180;
         frontRightMesh.setScale(car.getWheelRadius() * 2.0f);
 
         rearLeftMesh.setPosition(wheelPositions[3]);
-        rearLeftMesh.setRotation(carRotation);
+        rearLeftMesh.setRotation(carRotation.x, carRotation.y, wheelRotation);
         rearLeftMesh.setScale(car.getWheelRadius() * 2.0f);
 
         rearRightMesh.setPosition(wheelPositions[2]);
-        rearRightMesh.setRotation(carRotation);
+        rearRightMesh.setRotation(carRotation.x, carRotation.y, -wheelRotation);
         rearRightMesh.getRotation().y += 180;
         rearRightMesh.setScale(car.getWheelRadius() * 2.0f);
 
@@ -344,10 +352,15 @@ public class Game implements IGameLogic {
             testCube.update(interval);
             testCubeMesh_1.setPosition(testCube.getPosition());
 
-            forceArrow.setPosition(car.getPosition());
-            forceArrow.getPosition().y = 0.1f;
-            forceArrow.setRotation(carRotation);
-            forceArrow.setScale(car.acceleration);
+            debugArrowForward.setPosition(car.getPosition());
+            debugArrowForward.getPosition().y = 0.1f;
+            debugArrowForward.setRotation(0, carRotation.y - 90, 0);
+            debugArrowForward.setScale(car.acceleration);
+
+            debugArrowLeft.setPosition(car.getPosition());
+            debugArrowLeft.getPosition().y = 0.1f;
+            debugArrowLeft.setRotation(0, carRotation.y, 0);
+            debugArrowLeft.setScale(car.acceleration);
         }
     }
 

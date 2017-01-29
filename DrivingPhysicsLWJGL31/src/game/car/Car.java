@@ -5,6 +5,7 @@ import game.Game;
 import game.environment.GroundType;
 import game.environment.GroundTypes;
 import org.joml.Math;
+import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 public class Car {
@@ -20,7 +21,10 @@ public class Car {
     private float steeringAngle;
     private float wheelRadius;
     private float suspensionHeight;
-    private float carAngle;
+    private float carDirectionAngle;
+    private float carClimbingAngle;
+    private float carBankingAngle;
+    private float wheelAngle;
 
     private Vector3f position;
     private Vector3f forward;
@@ -29,6 +33,7 @@ public class Car {
     private Vector3f carUp;
     private Vector3f left;
     private Vector3f[] wheelPositions;
+    private Quaternionf rotation;
 
     private GroundType currentGround;
 
@@ -45,7 +50,10 @@ public class Car {
         maxEngineForce = 6000f;
         maxBrakeForce = 12000f;
         steeringAngle = 0;
-        carAngle = 0;
+        carDirectionAngle = 0;
+        carClimbingAngle = 0;
+        carBankingAngle = 0;
+        wheelAngle = 0;
 
         position = new Vector3f();
         forward = new Vector3f();
@@ -97,8 +105,8 @@ public class Car {
         }*/
 
         // calculate rotation in radians for upcoming forward vector calculation
-        float degToRad = (float)Math.toRadians(carAngle);
-        float degToRadInclSteering = (float)Math.toRadians(carAngle - steeringAngle);
+        float degToRad = (float)Math.toRadians(carDirectionAngle);
+        float degToRadInclSteering = (float)Math.toRadians(carDirectionAngle - steeringAngle);
 
         // calculate forward and left direction of the steered wheel
         steeredWheelForward.x = (float)Math.cos(degToRadInclSteering);
@@ -127,13 +135,20 @@ public class Car {
         Vector3f temp = new Vector3f(frontWheel).add(rearWheel);
         temp.div(2f);
         position = new Vector3f(temp);
+
+        // set car angles
         float newCarAngleInRad = (float)Math.atan2(frontWheel.z - rearWheel.z, frontWheel.x - rearWheel.x);
-        carAngle = (float) Math.toDegrees(newCarAngleInRad);
-        carAngle %= 360f;
-        
+        carDirectionAngle = (float) Math.toDegrees(newCarAngleInRad);
+        carDirectionAngle %= 360f;
+
+        // PROTOTYPED STUFF
+        carClimbingAngle = -acceleration;
+        carBankingAngle = -steeringAngle/10f;
+        wheelAngle += speed;
+
+        // set wheel positions
         frontWheel.y = wheelRadius;
         rearWheel.y = wheelRadius;
-
         wheelPositions[0] = new Vector3f(frontWheel).add(new Vector3f(left).mul(-trackWidth));
         wheelPositions[1] = new Vector3f(frontWheel).add(new Vector3f(left).mul(trackWidth));
         wheelPositions[2] = new Vector3f(rearWheel).add(new Vector3f(left).mul(-trackWidth));
@@ -167,7 +182,8 @@ public class Car {
 
     public Vector3f getRotation()
     {
-        return new Vector3f(0, carAngle, 0);
+        //TODO rotation around x sucks (seems to be global!)
+        return new Vector3f(carBankingAngle, carDirectionAngle, carClimbingAngle);
     }
 
     public Vector3f[] getWheelPositions()
@@ -178,6 +194,11 @@ public class Car {
     public float getWheelRadius()
     {
         return wheelRadius;
+    }
+
+    public float getWheelRotation()
+    {
+        return wheelAngle;
     }
 
     public void setWheelRadius(float wheelRadius)

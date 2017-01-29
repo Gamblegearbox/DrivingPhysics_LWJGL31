@@ -22,14 +22,12 @@ public class Window {
     private GLFWWindowSizeCallback windowSizeCallback;
 
     private boolean resized;
-    private boolean vSync;
 
-    public Window(String title, int width, int height, boolean vSync)
+    public Window(String title, int width, int height)
     {
         this.title = title;
         this.width = width;
         this.height = height;
-        this.vSync = vSync;
         this.resized = false;
     }
 
@@ -49,8 +47,18 @@ public class Window {
         glfwWindowHint(GLFW_RESIZABLE, GL_TRUE); // the window will be resizable
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
-        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-        glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+
+        if (GraphicOptions.COMPATIBLE_PROFILE) {
+            glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
+        } else {
+            glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+            glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+        }
+
+        // Antialiasing
+        if (GraphicOptions.ANTIALIASING) {
+            glfwWindowHint(GLFW_SAMPLES, 4);
+        }
 
 
         // Create the window
@@ -59,7 +67,6 @@ public class Window {
         {
             throw new RuntimeException("Failed to create the GLFW window");
         }
-
 
         // Setup resize callback
         glfwSetWindowSizeCallback(windowHandle, windowSizeCallback = new GLFWWindowSizeCallback()
@@ -86,6 +93,7 @@ public class Window {
 
         // Get the resolution of the primary monitor
         GLFWVidMode vidmode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+
         // Center our window
         glfwSetWindowPos(
                 windowHandle,
@@ -96,7 +104,7 @@ public class Window {
         // Make the OpenGL context current
         glfwMakeContextCurrent(windowHandle);
 
-        if (isvSync()) {
+        if (GraphicOptions.V_SYNC) {
             // Enable v-sync
             glfwSwapInterval(1);
         }
@@ -105,7 +113,6 @@ public class Window {
         glfwShowWindow(windowHandle);
 
         GL.createCapabilities();
-
     }
 
     public long getWindowHandle()
@@ -148,19 +155,10 @@ public class Window {
         this.resized = resized;
     }
 
-    public boolean isvSync()
-    {
-        return vSync;
-    }
-
-    public void setvSync(boolean vSync)
-    {
-        this.vSync = vSync;
-    }
-
     public void update()
     {
         glfwSwapBuffers(windowHandle);
         glfwPollEvents();
     }
+
 }
