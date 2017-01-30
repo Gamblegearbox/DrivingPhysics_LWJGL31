@@ -97,6 +97,12 @@ public class Game implements IGameLogic {
         camera.setPosition(0, 5, 20);
         camera.setRotation(0,0,0);
         setupHUD();
+
+        if(EngineOptions.DEBUG)
+        {
+            EngineOptions.printInfo();
+        }
+
     }
 
     private void setupGameItems() throws Exception

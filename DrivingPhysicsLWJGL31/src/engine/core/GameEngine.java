@@ -6,9 +6,6 @@ import engine.input.MouseInput;
 
 public class GameEngine implements Runnable{
 
-    public static final int TARGET_FPS = 60;
-    public static final int TARGET_UPS = 75;
-
     private final Window window;
     private final Thread gameLoopThread;
     private final Timer timer;
@@ -26,17 +23,20 @@ public class GameEngine implements Runnable{
 
     public void start()
     {
-        String osName = System.getProperty("os.name");
+        String osName = EngineOptions.OPERATING_SYSTEM;
+
+        if(EngineOptions.DEBUG)
+        {
+            System.out.println("OPERATING SYSTEM: " + osName);
+        }
 
         if(osName.contains("Mac"))
         {
-            System.out.println("Running on: " + osName);
             EngineOptions.COMPATIBLE_PROFILE = false;
             gameLoopThread.run();
         }
         else
         {
-            System.out.println("Running on: " + osName);
             gameLoopThread.start();
         }
     }
@@ -71,7 +71,7 @@ public class GameEngine implements Runnable{
     {
         float elapsedTime;
         float accumulator = 0f;
-        float interval = 1f / TARGET_UPS;
+        float interval = 1f / EngineOptions.TARGET_UPS;
 
         boolean running = true;
 
@@ -105,7 +105,7 @@ public class GameEngine implements Runnable{
 
     private void sync()
     {
-        float loopSlot = 1f / TARGET_FPS;
+        float loopSlot = 1f / EngineOptions.TARGET_FPS;
         double endTime = timer.getLastLoopTime() + loopSlot;
 
         while(timer.getTime() < endTime)
