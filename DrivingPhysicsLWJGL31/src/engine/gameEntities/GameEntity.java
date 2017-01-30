@@ -1,20 +1,22 @@
 package engine.gameEntities;
 
 import engine.mesh.Mesh;
+import engine.utils.Physics;
+import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 public class GameEntity {
 
     private Mesh mesh;
     private final Vector3f position;
-    private final Vector3f rotation;
+    private final Quaternionf rotation;
     private float scale;
 
     public GameEntity()
     {
         position = new Vector3f(0, 0, 0);
         scale = 1;
-        rotation = new Vector3f(0, 0, 0);
+        rotation = new Quaternionf();
     }
 
     public GameEntity(Mesh mesh)
@@ -42,23 +44,24 @@ public class GameEntity {
         this.position.z = position.z;
     }
 
-    public Vector3f getRotation()
+    public Quaternionf getRotation()
     {
         return rotation;
     }
 
-    public void setRotation(float x, float y, float z)
+    public void setRotation(float angle, Vector3f rotation)
     {
-        this.rotation.x = x;
-        this.rotation.y = y;
-        this.rotation.z = z;
+        this.rotation.setAngleAxis(angle, rotation.x, rotation.y, rotation.z);
     }
 
     public void setRotation(Vector3f rotation)
     {
-        this.rotation.x = rotation.x;
-        this.rotation.y = rotation.y;
-        this.rotation.z = rotation.z;
+        this.rotation.set(Physics.eulerToQuaternion(rotation.x, rotation.y, rotation.z));
+    }
+
+    public void setRotation(float xRot, float yRot, float zRot)
+    {
+        this.rotation.set(Physics.eulerToQuaternion(xRot, yRot, zRot));
     }
 
     public float getScale()

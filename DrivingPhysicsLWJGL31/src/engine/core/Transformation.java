@@ -3,6 +3,7 @@ package engine.core;
 import engine.camera.Camera;
 import engine.gameEntities.GameEntity;
 import org.joml.Matrix4f;
+import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 public class Transformation {
@@ -48,16 +49,11 @@ public class Transformation {
         return updateGenericViewMatrix(camera.getPosition(), camera.getRotation(), viewMatrix);
     }
 
-    private Matrix4f updateGenericViewMatrix(Vector3f position, Vector3f rotation, Matrix4f matrix)
-    {
-        matrix.identity();
+    public static  Matrix4f updateGenericViewMatrix(Vector3f position, Vector3f rotation, Matrix4f matrix) {
         // First do the rotation so camera rotates over its position
-        matrix.rotate((float)Math.toRadians(rotation.x), new Vector3f(1, 0, 0))
-                .rotate((float)Math.toRadians(rotation.y), new Vector3f(0, 1, 0));
-        // Then do the translation
-        matrix.translate(-position.x, -position.y, -position.z);
-
-        return matrix;
+        return matrix.rotationX((float)Math.toRadians(rotation.x))
+                .rotateY((float)Math.toRadians(rotation.y))
+                .translate(-position.x, -position.y, -position.z);
     }
 
     public final Matrix4f getOrtho2DProjectionMatrix(float left, float right, float bottom, float top)
@@ -68,27 +64,41 @@ public class Transformation {
         return ortho2DMatrix;
     }
 
-    public Matrix4f buildModelViewMatrix(GameEntity gameEntity, Matrix4f matrix)
+    public Matrix4f buildModelMatrix(GameEntity gameEntity)
     {
-        Vector3f rotation = gameEntity.getRotation();
-        modelMatrix.identity().translate(gameEntity.getPosition()).
+        /*Vector3f rotation = gameEntity.getRotation();
+        return modelMatrix.identity().translate(gameEntity.getPosition()).
                 rotateX((float)Math.toRadians(-rotation.x)).
                 rotateY((float)Math.toRadians(-rotation.y)).
                 rotateZ((float)Math.toRadians(-rotation.z)).
-                scale(gameEntity.getScale());
-        modelViewMatrix.set(matrix);
-
-        return modelViewMatrix.mul(modelMatrix);
+                scale(gameEntity.getScale());*/
+        Quaternionf rotation = gameEntity.getRotation();
+        return modelMatrix.translationRotateScale(
+                gameEntity.getPosition().x, gameEntity.getPosition().y, gameEntity.getPosition().z,
+                rotation.x, rotation.y, rotation.z, rotation.w,
+                gameEntity.getScale(), gameEntity.getScale(), gameEntity.getScale());
     }
 
-    public Matrix4f buildOrtoProjModelMatrix(GameEntity gameEntity, Matrix4f orthoMatrix)
+    public Matrix4f buildModelViewMatrix(Matrix4f modelMatrix, Matrix4f viewMatrix)
     {
-        Vector3f rotation = gameEntity.getRotation();
+        return viewMatrix.mulAffine(modelMatrix, modelViewMatrix);
+    }
+
+    public Matrix4f buildOrthoProjModelMatrix(GameEntity gameEntity, Matrix4f orthoMatrix)
+    {
+        /*Vector3f rotation = gameEntity.getRotation();
         modelMatrix.identity().translate(gameEntity.getPosition()).
                 rotateX((float) Math.toRadians(-rotation.x)).
                 rotateY((float) Math.toRadians(-rotation.y)).
                 rotateZ((float) Math.toRadians(-rotation.z)).
-                scale(gameEntity.getScale());
+                scale(gameEntity.getScale());*/
+
+        Quaternionf rotation = gameEntity.getRotation();
+        modelMatrix.translationRotateScale(
+                gameEntity.getPosition().x, gameEntity.getPosition().y, gameEntity.getPosition().z,
+                rotation.x, rotation.y, rotation.z, rotation.w,
+                gameEntity.getScale(), gameEntity.getScale(), gameEntity.getScale());
+
         orthoModelMatrix.set(orthoMatrix);
         orthoModelMatrix.mul(modelMatrix);
 

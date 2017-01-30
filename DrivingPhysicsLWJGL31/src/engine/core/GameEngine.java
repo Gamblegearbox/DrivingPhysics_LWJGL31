@@ -31,6 +31,7 @@ public class GameEngine implements Runnable{
         if(osName.contains("Mac"))
         {
             System.out.println("Running on: " + osName);
+            EngineOptions.COMPATIBLE_PROFILE = false;
             gameLoopThread.run();
         }
         else
@@ -89,7 +90,7 @@ public class GameEngine implements Runnable{
 
             render();
 
-            if(!GraphicOptions.V_SYNC)
+            if(!EngineOptions.V_SYNC)
             {
                 sync();
             }

@@ -48,7 +48,7 @@ public class Window {
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
 
-        if (GraphicOptions.COMPATIBLE_PROFILE) {
+        if (EngineOptions.COMPATIBLE_PROFILE) {
             glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
         } else {
             glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
@@ -56,10 +56,9 @@ public class Window {
         }
 
         // Antialiasing
-        if (GraphicOptions.ANTIALIASING) {
+        if (EngineOptions.ANTIALIASING) {
             glfwWindowHint(GLFW_SAMPLES, 4);
         }
-
 
         // Create the window
         windowHandle = glfwCreateWindow(width, height, title, NULL, NULL);
@@ -104,7 +103,7 @@ public class Window {
         // Make the OpenGL context current
         glfwMakeContextCurrent(windowHandle);
 
-        if (GraphicOptions.V_SYNC) {
+        if (EngineOptions.V_SYNC) {
             // Enable v-sync
             glfwSwapInterval(1);
         }
@@ -128,11 +127,6 @@ public class Window {
     public boolean windowShouldClose()
     {
         return glfwWindowShouldClose(windowHandle);
-    }
-
-    public String getTitle()
-    {
-        return title;
     }
 
     public int getWidth()

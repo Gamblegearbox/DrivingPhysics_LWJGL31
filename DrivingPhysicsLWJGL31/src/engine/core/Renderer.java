@@ -33,7 +33,6 @@ public class Renderer {
     private ShaderProgram sceneShaderProgram;
     private ShaderProgram hudShaderProgram;
 
-
     public Renderer()
     {
         transformation = new Transformation();
@@ -46,7 +45,6 @@ public class Renderer {
         setupHudShader();
     }
 
-
     private void setupOpenGL()
     {
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
@@ -55,12 +53,16 @@ public class Renderer {
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-        if(GraphicOptions.SHOW_TRIANGLES)
+        if(EngineOptions.SHOW_TRIANGLES)
         {
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         }
+        else
+        {
+            glPolygonMode(GL_FRONT_FACE, GL_FILL);
+        }
 
-        if(GraphicOptions.CULLFACE)
+        if(EngineOptions.CULLFACE)
         {
             glEnable(GL_CULL_FACE);
             glCullFace(GL_BACK);
@@ -120,7 +122,7 @@ public class Renderer {
 
         renderScene(scene);
         renderHud(window, hud);
-        if(GraphicOptions.COMPATIBLE_PROFILE)
+        if(EngineOptions.COMPATIBLE_PROFILE)
         {
             renderCompatibleProfileStuff();
         }
@@ -153,10 +155,12 @@ public class Renderer {
             sceneShaderProgram.setUniform("material", mesh.getMaterial());
             glActiveTexture(GL_TEXTURE2);
 
-            mesh.renderList(mapMeshes.get(mesh), (GameEntity gameEntity) -> {
-                        Matrix4f modelViewMatrix = transformation.buildModelViewMatrix(gameEntity, viewMatrix);
-                        sceneShaderProgram.setUniform("modelViewMatrix", modelViewMatrix);
-                    }
+            mesh.renderList(mapMeshes.get(mesh), (GameEntity gameEntity) ->
+                {
+                    Matrix4f modelMatrix = transformation.buildModelMatrix(gameEntity);
+                    Matrix4f modelViewMatrix = transformation.buildModelViewMatrix(modelMatrix, viewMatrix);
+                    sceneShaderProgram.setUniform("modelViewMatrix", modelViewMatrix);
+                }
             );
         }
 
@@ -185,7 +189,7 @@ public class Renderer {
             for (GameEntity gameEntity : hud.getGameEntities()) {
                 Mesh mesh = gameEntity.getMesh();
                 // Set ortohtaphic and model matrix for this HUD item
-                Matrix4f projModelMatrix = transformation.buildOrtoProjModelMatrix(gameEntity, ortho);
+                Matrix4f projModelMatrix = transformation.buildOrthoProjModelMatrix(gameEntity, ortho);
                 hudShaderProgram.setUniform("projModelMatrix", projModelMatrix);
                 hudShaderProgram.setUniform("colour", gameEntity.getMesh().getMaterial().getColour());
                 hudShaderProgram.setUniform("hasTexture", gameEntity.getMesh().getMaterial().isTextured() ? 1 : 0);
