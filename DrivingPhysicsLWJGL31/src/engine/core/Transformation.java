@@ -73,10 +73,11 @@ public class Transformation {
                 rotateZ((float)Math.toRadians(-rotation.z)).
                 scale(gameEntity.getScale());*/
         Quaternionf rotation = gameEntity.getRotation();
+        Vector3f scale = gameEntity.getScale();
         return modelMatrix.translationRotateScale(
                 gameEntity.getPosition().x, gameEntity.getPosition().y, gameEntity.getPosition().z,
                 rotation.x, rotation.y, rotation.z, rotation.w,
-                gameEntity.getScale(), gameEntity.getScale(), gameEntity.getScale());
+                scale.x, scale.y, scale.z);
     }
 
     public Matrix4f buildModelViewMatrix(Matrix4f modelMatrix, Matrix4f viewMatrix)
@@ -94,10 +95,11 @@ public class Transformation {
                 scale(gameEntity.getScale());*/
 
         Quaternionf rotation = gameEntity.getRotation();
+        Vector3f scale = gameEntity.getScale();
         modelMatrix.translationRotateScale(
                 gameEntity.getPosition().x, gameEntity.getPosition().y, gameEntity.getPosition().z,
                 rotation.x, rotation.y, rotation.z, rotation.w,
-                gameEntity.getScale(), gameEntity.getScale(), gameEntity.getScale());
+                scale.x, scale.y, scale.z);
 
         orthoModelMatrix.set(orthoMatrix);
         orthoModelMatrix.mul(modelMatrix);

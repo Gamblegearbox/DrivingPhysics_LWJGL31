@@ -122,13 +122,11 @@ public class Game implements IGameLogic {
         mesh.setMaterial(material);
         carMesh = new GameEntity(mesh);
         carMesh.setPosition(car.getPosition());
-        carMesh.setScale(1);
 
         mesh = OBJLoader.loadMesh("/models/Car_Offroad_Axles.obj");
         mesh.setMaterial(material);
         axleMesh = new GameEntity(mesh);
         axleMesh.setPosition(car.getPosition());
-        axleMesh.setScale(1);
 
         mesh = OBJLoader.loadMesh("/models/Wheel_Offroad.obj");
         mesh.setMaterial(material);
@@ -335,6 +333,7 @@ public class Game implements IGameLogic {
         Vector3f[] wheelPositions = car.getWheelPositions();
         float wheelRotation = car.getWheelRotation();
         float wheelRadius = car.getWheelRadius();
+        float wheelDiameter = wheelRadius * 2;
 
         carMesh.setPosition(carPosition);
         carMesh.setRotation(carRotation);
@@ -345,19 +344,19 @@ public class Game implements IGameLogic {
 
         frontLeftMesh.setPosition(wheelPositions[1]);
         frontLeftMesh.setRotation(0, carRotation.y + car.getSteeringAngle(), wheelRotation);
-        frontLeftMesh.setScale(wheelRadius * 2.0f);
+        frontLeftMesh.setScale(wheelDiameter);
 
         frontRightMesh.setPosition(wheelPositions[0]);
         frontRightMesh.setRotation(0, carRotation.y + 180 + car.getSteeringAngle(), -wheelRotation);
-        frontRightMesh.setScale(wheelRadius * 2.0f);
+        frontRightMesh.setScale(wheelDiameter);
 
         rearLeftMesh.setPosition(wheelPositions[3]);
         rearLeftMesh.setRotation(0, carRotation.y, wheelRotation);
-        rearLeftMesh.setScale(wheelRadius * 2.0f);
+        rearLeftMesh.setScale(wheelDiameter);
 
         rearRightMesh.setPosition(wheelPositions[2]);
         rearRightMesh.setRotation(0, carRotation.y + 180, -wheelRotation);
-        rearRightMesh.setScale(wheelRadius * 2.0f);
+        rearRightMesh.setScale(wheelDiameter);
 
         hud.setStatusText("v: " + car.speed + " / a: " + car.acceleration + " / Force: " + car.currentForce + " / Km/h: " + Physics.metersPerSecondToKilometersPerHour(car.getSpeed()));
 
@@ -371,12 +370,12 @@ public class Game implements IGameLogic {
             debugArrowForward.setPosition(carPosition);
             debugArrowForward.getPosition().y = 0.1f;
             debugArrowForward.setRotation(0, carRotation.y + 90, 0);
-            debugArrowForward.setScale(car.acceleration);
+            debugArrowForward.setScale(car.acceleration, 1, 1);
 
             debugArrowLeft.setPosition(carPosition);
             debugArrowLeft.getPosition().y = 0.1f;
             debugArrowLeft.setRotation(0, carRotation.y, 0);
-            debugArrowLeft.setScale(car.acceleration);
+            debugArrowLeft.setScale(car.acceleration, 1, 1);
         }
     }
 

@@ -123,6 +123,7 @@ public class Car {
         Vector3f rearWheel = new Vector3f(position).add(new Vector3f(forward).mul(-halfWheelBase));
 
         // FLIEHKRAFT BERECHNEN
+
             // Wenn größer als Seitenführungskraft:
                 // SEITLICHE BESCHLEUNIGUNG BERECHNEN UND ANWENDEN
 

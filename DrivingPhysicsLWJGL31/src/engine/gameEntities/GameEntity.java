@@ -10,12 +10,12 @@ public class GameEntity {
     private Mesh mesh;
     private final Vector3f position;
     private final Quaternionf rotation;
-    private float scale;
+    private Vector3f scale;
 
     public GameEntity()
     {
         position = new Vector3f(0, 0, 0);
-        scale = 1;
+        scale = new Vector3f(1, 1, 1);
         rotation = new Quaternionf();
     }
 
@@ -49,11 +49,6 @@ public class GameEntity {
         return rotation;
     }
 
-    public void setRotation(float angle, Vector3f rotation)
-    {
-        this.rotation.setAngleAxis(angle, rotation.x, rotation.y, rotation.z);
-    }
-
     public void setRotation(Vector3f rotation)
     {
         this.rotation.set(Physics.eulerToQuaternion(rotation.x, rotation.y, rotation.z));
@@ -64,14 +59,28 @@ public class GameEntity {
         this.rotation.set(Physics.eulerToQuaternion(xRot, yRot, zRot));
     }
 
-    public float getScale()
+    public Vector3f getScale()
     {
         return scale;
     }
 
-    public void setScale(float scale)
+    public void setScale(Vector3f scale)
     {
         this.scale = scale;
+    }
+
+    public void setScale(float x, float y, float z)
+    {
+        scale.x = x;
+        scale.y = y;
+        scale.z = z;
+    }
+
+    public void setScale(float scale)
+    {
+        this.scale.x = scale;
+        this.scale.y = scale;
+        this.scale.z = scale;
     }
 
     public Mesh getMesh()

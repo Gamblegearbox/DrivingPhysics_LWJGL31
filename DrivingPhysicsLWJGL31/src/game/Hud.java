@@ -14,6 +14,7 @@ public class Hud implements IHud {
 
     private static final int FONT_COLS = 16;
     private static final int FONT_ROWS = 16;
+    private static final float COMPASS_NEEDLE_SIZE = 10.0f;
 
     private static final String FONT_TEXTURE = "/textures/Font_Menlo.png";
     private final GameEntity[] gameEntities;
@@ -32,7 +33,7 @@ public class Hud implements IHud {
         material.setColor(new Vector3f(1, 0, 0));
         mesh.setMaterial(material);
         compassItem = new GameEntity(mesh);
-        compassItem.setScale(10.0f);
+        compassItem.setScale(COMPASS_NEEDLE_SIZE);
         // Rotate to transform it to screen coordinates
         rotateCompass(0);
 
