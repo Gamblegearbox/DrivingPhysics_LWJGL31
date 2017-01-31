@@ -1,6 +1,7 @@
 package engine.utils;
 
 
+import org.joml.Math;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
@@ -18,12 +19,28 @@ public class Physics
         return mass * acceleration;
     }
 
-    public static float metersPerSecondToKilometersPerHour(float metersPerSecond)
+    public static float calcTurningRadius(float wheelbase, float steeringAngle)
+    {
+        float magicOffset = steeringAngle / 50;
+        return (wheelbase /(float)Math.sin(Math.toRadians(steeringAngle))) - magicOffset;
+    }
+
+    public static float calcRedialForce(float mass, float speed, float turningRadius)
+    {
+        return mass * ((speed * speed) / turningRadius);
+    }
+
+    public static float calcWeight(float mass)
+    {
+        return mass * G;
+    }
+
+    public static float convertMPStoKMH(float metersPerSecond)
     {
         return metersPerSecond * 3.6f;
     }
 
-    public static Quaternionf eulerToQuaternion(float xRot, float yRot, float zRot) {
+    public static Quaternionf convertEulerToQuaternion(float xRot, float yRot, float zRot) {
         xRot = (float)Math.toRadians(xRot);
         yRot = (float)Math.toRadians(yRot);
         zRot = (float)Math.toRadians(zRot);

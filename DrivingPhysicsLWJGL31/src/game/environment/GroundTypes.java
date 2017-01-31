@@ -2,8 +2,8 @@ package game.environment;
 
 public class GroundTypes {
 
-    public static final GroundType ROAD = new GroundType("ROAD");
-    public static final GroundType SAND_HARD = new GroundType("SAND_HARD");
-    public static final GroundType SAND_SOFT = new GroundType("SAND_SOFT");
-    public static final GroundType SNOW = new GroundType("SNOW");
+    public static final GroundType ROAD = new GroundType("ROAD", 0.015f, 0.5f, 0.8f);
+    public static final GroundType SAND_HARD = new GroundType("SAND_HARD", 0.2f, 0.3f, 0);
+    public static final GroundType SAND_SOFT = new GroundType("SAND_SOFT", 0.4f, 0, 0);
+    public static final GroundType SNOW = new GroundType("ICE", 0.015f, 0.05f, 0.10f);
 }

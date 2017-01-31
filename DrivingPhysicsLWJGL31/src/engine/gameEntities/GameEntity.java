@@ -51,12 +51,12 @@ public class GameEntity {
 
     public void setRotation(Vector3f rotation)
     {
-        this.rotation.set(Physics.eulerToQuaternion(rotation.x, rotation.y, rotation.z));
+        this.rotation.set(Physics.convertEulerToQuaternion(rotation.x, rotation.y, rotation.z));
     }
 
     public void setRotation(float xRot, float yRot, float zRot)
     {
-        this.rotation.set(Physics.eulerToQuaternion(xRot, yRot, zRot));
+        this.rotation.set(Physics.convertEulerToQuaternion(xRot, yRot, zRot));
     }
 
     public Vector3f getScale()
