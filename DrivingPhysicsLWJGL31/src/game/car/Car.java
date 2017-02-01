@@ -1,7 +1,7 @@
 package game.car;
 
 import engine.core.EngineOptions;
-import engine.utils.Physics;
+import engine.physics.Physics;
 import game.environment.GroundType;
 import game.environment.GroundTypes;
 import org.joml.Math;
@@ -17,14 +17,14 @@ public class Car {
     private final float mass;
     private final float maxEngineForce;
     private final float maxBrakeForce;
-    private final float wheelRadius;
+    public final float wheelRadius;
     private final float suspensionHeight;
 
-    private float steeringAngle;
+    public float steeringAngle;
     private float carDirectionAngle;
-    private float wheelSpinAngle;
+    public float wheelSpinAngle;
 
-    private Vector3f position;
+    public Vector3f position;
     public Vector3f frontWheelsPosition;
     public Vector3f rearWheelsPosition;
     public Vector3f frontWheelsForward;
@@ -32,10 +32,13 @@ public class Car {
     public Vector3f rearWheelsForward;
     public Vector3f rearWheelsLeft;
     private Vector3f carUp;
-    private Vector3f rotation;
-    private Vector3f[] wheelPositions;
+    public Vector3f rotation;
+    public Vector3f[] wheelPositions;
+    public Vector2f combinedForces;
 
     private GroundType currentGround;
+    public float maxFrontAxleForce;
+    public float maxRearAxleForce;
 
     public float forwardAcceleration;
     public float forwardForce;
@@ -45,7 +48,7 @@ public class Car {
 
     public Car()
     {
-        maxSteeringAngle = 35f;
+        maxSteeringAngle = 30f;
         wheelBase = 3.15f;
         halfWheelBase = wheelBase / 2f;
         halfTrackWidth = 0.83f;
@@ -71,7 +74,6 @@ public class Car {
     {
         //6 * interval IS ONE REV PER MIN ON THE WHEEL!! (6 degrees per second * 60(360 per minute) * interval)
 
-
         // get the current ground surface to calculate friction and stuff
         if(currentGround != getGroundType())
         {
@@ -79,29 +81,34 @@ public class Car {
             if(EngineOptions.DEBUG)
             {
                 System.out.println(currentGround.getType());
+                System.out.println("C_Roll: " + currentGround.getRollingFriction());
+                System.out.println("U_Gleit: " + currentGround.getSlidingFriction());
+                System.out.println("U_Haft: " + currentGround.getStaticFriction());
             }
         }
 
         // use input to adjust steering and calculate force acceleration and speed in longitudinal direction
         steeringAngle = maxSteeringAngle * steeringInput;
         forwardForce = maxEngineForce * throttleInput - maxBrakeForce * brakeInput;
-        forwardAcceleration = Physics.calcAcceleration(mass, forwardForce);
-        forwardSpeed += forwardAcceleration * interval;
 
         turningRadius = Physics.calcTurningRadius(wheelBase, steeringAngle);
         radialForce = Physics.calcRedialForce(mass, forwardSpeed, turningRadius);
 
-        Vector2f combinedForces = new Vector2f(forwardForce, radialForce);
-        float frontAxleMaxForce = 25000;
-        float rearAxleMaxForce = 20000;
-        if(combinedForces.length() > rearAxleMaxForce)
-        {
-            System.out.println("REAR AXLE IS SLIDING");
-        }
-        if(combinedForces.length() > frontAxleMaxForce)
-        {
-            System.out.println("FRONT AXLE IS SLIDING");
-        }
+        float weightInNewton = Physics.calcWeight(mass);
+        maxFrontAxleForce = currentGround.getStaticFriction() * weightInNewton; // TODO: maybe us a modifier to alter over or understeer?!
+        maxRearAxleForce = currentGround.getStaticFriction() * weightInNewton;  // TODO: maybe us a modifier to alter over or understeer?!
+        System.out.println(maxFrontAxleForce);
+
+        // subtract rollresistace force from forwardforce if speed is !0
+        float rollFrictionForce = currentGround.getRollingFriction() * weightInNewton;
+        forwardForce -= rollFrictionForce;
+
+        // subtract static friction force from overall force if speed is 0
+        // subtract dynamic friction force from overall force if sliding
+
+        forwardAcceleration = Physics.calcAcceleration(mass, forwardForce);
+        forwardSpeed += forwardAcceleration * interval;
+        combinedForces = new Vector2f(forwardForce, -radialForce);
 
         // calculate rotation in radians for upcoming rearWheelsForward vector calculation
         float degToRad = (float)Math.toRadians(carDirectionAngle);
@@ -141,13 +148,21 @@ public class Car {
         wheelPositions[3] = new Vector3f(rearWheelsPosition).add(new Vector3f(rearWheelsLeft).mul(halfTrackWidth));
 
         // PROTOTYPED STUFF
-        float carClimbingAngle = forwardAcceleration / 2;
-        float carBankingAngle = steeringAngle / 5;
+        // Fake dynamics and wheelSpin
+        float maxWeightShiftFrontBack = 3;
+        float maxWeightShiftLeftRight = 7;
+        float weightShiftFrontBackAngle = maxWeightShiftFrontBack * forwardForce / maxEngineForce;
+        float weightShiftLeftRightAngle = forwardSpeed/2;
+        if(weightShiftLeftRightAngle > maxWeightShiftLeftRight)
+        {
+            weightShiftLeftRightAngle = maxWeightShiftLeftRight;
+        }
+        weightShiftLeftRightAngle *= steeringInput;
         wheelSpinAngle -= forwardSpeed;
 
         // Final position and rotation fixes
         position.y = wheelRadius + suspensionHeight;
-        rotation.set(carBankingAngle, -carDirectionAngle, carClimbingAngle);
+        rotation.set(weightShiftLeftRightAngle, -carDirectionAngle, weightShiftFrontBackAngle);
     }
 
     private GroundType getGroundType()
@@ -163,35 +178,14 @@ public class Car {
         return result;
     }
 
-    public Vector3f getPosition()
-    {
-        return position;
-    }
 
-    public Vector3f getRotation()
-    {
-        return rotation;
-    }
 
-    public Vector3f[] getWheelPositions()
-    {
-        return wheelPositions;
-    }
 
-    public float getWheelRadius()
-    {
-        return wheelRadius;
-    }
 
-    public float getWheelRotation()
-    {
-        return wheelSpinAngle;
-    }
 
-    public float getSteeringAngle()
-    {
-        return steeringAngle;
-    }
+
+
+
 
 
     private float calcFriction(float speed, float interval)

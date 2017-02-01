@@ -1,4 +1,4 @@
-package engine.utils;
+package engine.physics;
 
 
 import org.joml.Math;
@@ -34,6 +34,8 @@ public class Physics
     {
         return mass * G;
     }
+
+
 
     public static float convertMPStoKMH(float metersPerSecond)
     {

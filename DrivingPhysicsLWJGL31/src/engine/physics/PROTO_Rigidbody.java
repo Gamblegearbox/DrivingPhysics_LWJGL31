@@ -1,6 +1,6 @@
-package game;
+package engine.physics;
 
-import engine.utils.Physics;
+import engine.physics.Physics;
 import org.joml.Vector3f;
 
 /**

@@ -7,12 +7,14 @@ import engine.core.Renderer;
 import engine.gameEntities.GameEntity;
 import engine.mesh.Mesh;
 import engine.interfaces.IGameLogic;
+import engine.physics.PROTO_Rigidbody;
 import engine.scene.Scene;
 import engine.shading.Material;
 import engine.texture.Texture;
 import engine.input.MouseInput;
+import engine.utils.DebugMeshes;
 import engine.utils.OBJLoader;
-import engine.utils.Physics;
+import engine.physics.Physics;
 import game.car.Car;
 import engine.light.DirectionalLight;
 import engine.scene.SceneLight;
@@ -34,7 +36,6 @@ public class Game implements IGameLogic {
     private static final float INPUT_MAX_VALUE = 1.0f;
     private static final float CAMERA_SPEED = 5f;
     private static final float CAMERA_SPEED_FAST = 10f;
-
 
     private final Renderer renderer;
     private final Camera camera;
@@ -69,16 +70,8 @@ public class Game implements IGameLogic {
     private int totalUpdates = 0;
     private int totalRenderCycles = 0;
     private int totalInputCalls = 0;
-    private float debugValue_0 = 0;
-    private float debugValue_1 = 0;
-    private final float debugValueIncrease = 1.0f;
 
     private GameEntity debugArrowRadius;
-    private GameEntity debugFrontForward;
-    private GameEntity debugFrontLeft;
-    private GameEntity debugRearForward;
-    private GameEntity debugRearLeft;
-
 
     public Game()
     {
@@ -94,9 +87,6 @@ public class Game implements IGameLogic {
         renderer.init();
         scene = new Scene();
         car = new Car();
-
-        debugValue_0 = 0;
-        debugValue_1 = 0;
 
         setupGameItems();
         setupLight();
@@ -128,12 +118,10 @@ public class Game implements IGameLogic {
         mesh = OBJLoader.loadMesh("/models/Car_Offroad.obj");
         mesh.setMaterial(material);
         carMesh = new GameEntity(mesh);
-        carMesh.setPosition(car.getPosition());
 
         mesh = OBJLoader.loadMesh("/models/Car_Offroad_Axles.obj");
         mesh.setMaterial(material);
         axleMesh = new GameEntity(mesh);
-        axleMesh.setPosition(car.getPosition());
 
         mesh = OBJLoader.loadMesh("/models/Wheel_Offroad.obj");
         mesh.setMaterial(material);
@@ -155,57 +143,17 @@ public class Game implements IGameLogic {
         // create debug objects
         if(EngineOptions.DEBUG)
         {
-            Material red = new Material(new Vector3f(0.8f, 0.0f, 0.0f), 0f);
-            Material green = new Material(new Vector3f(0.0f, 0.8f, 0.0f), 0f);
-            Material blue = new Material(new Vector3f(0.0f, 0.0f, 0.8f), 0f);
-
             // RIGID BODY CUBE
             mesh = OBJLoader.loadMesh("/models/REF_ONE_CUBIC_METER.obj");
-            mesh.setMaterial(red);
+            mesh.setMaterial(Materials.RED);
             testCubeMesh_1 = new GameEntity(mesh);
             testCubeMesh_1.setPosition(0, 25f, -15);
             testCube = new PROTO_Rigidbody(testCubeMesh_1.getPosition(), 1f);
 
-
-            float[] positions = new float[]{
-                    0.0f, 0.0f, 0.1f,
-                    0.0f, 0.0f, -0.1f,
-                    1.0f, 0.0f, 0.1f,
-                    1.0f, 0.0f, -0.1f
-            };
-            float[] texCoords = new float[]{0, 1, 0, 1, 0, 1, 0, 1};
-            float[] normals = new float[]{
-                    0, 1, 0,
-                    0, 1, 0,
-                    0, 1, 0,
-                    0, 1, 0
-            };
-            int[] indices = new int[]{0, 2, 3, 3, 1, 0};
-
-            mesh = new Mesh(positions, texCoords, normals, indices);
-            mesh.setMaterial(red);
-            debugFrontForward = new GameEntity(mesh);
-
-            mesh = new Mesh(positions, texCoords, normals, indices);
-            mesh.setMaterial(green);
-            debugFrontLeft = new GameEntity(mesh);
-
-            mesh = new Mesh(positions, texCoords, normals, indices);
-            mesh.setMaterial(red);
-            debugRearForward = new GameEntity(mesh);
-
-            mesh = new Mesh(positions, texCoords, normals, indices);
-            mesh.setMaterial(green);
-            debugRearLeft = new GameEntity(mesh);
-
-            mesh = new Mesh(positions, texCoords, normals, indices);
-            mesh.setMaterial(blue);
+            mesh = DebugMeshes.buildline();
+            mesh.setMaterial(Materials.WHITE);
             debugArrowRadius = new GameEntity(mesh);
 
-            gameEntities.add(debugFrontForward);
-            gameEntities.add(debugFrontLeft);
-            gameEntities.add(debugRearForward);
-            gameEntities.add(debugRearLeft);
             gameEntities.add(debugArrowRadius);
             gameEntities.add(testCubeMesh_1);
         }
@@ -318,24 +266,6 @@ public class Game implements IGameLogic {
         if(EngineOptions.DEBUG)
         {
             totalInputCalls++;
-
-            if (window.isKeyPressed(GLFW_KEY_R))
-            {
-                debugValue_0 += debugValueIncrease;
-            }
-            else if (window.isKeyPressed(GLFW_KEY_F))
-            {
-                debugValue_0 -= debugValueIncrease;
-            }
-
-            if (window.isKeyPressed(GLFW_KEY_T))
-            {
-                debugValue_1 += debugValueIncrease;
-            }
-            else if (window.isKeyPressed(GLFW_KEY_G))
-            {
-                debugValue_1 -= debugValueIncrease;
-            }
         }
 
     }
@@ -343,16 +273,17 @@ public class Game implements IGameLogic {
     @Override
     public void update(float interval, MouseInput mouseInput)
     {
-        updateCameraAndCompass(mouseInput, interval);
+        updateCamera(mouseInput, interval);
+        hud.updateCompass(camera.getRotation().y);
         updateDirectionalLight();
 
         car.update(throttleInput, brakeInput, steeringInput, gear, handbrakeInput, interval);
-        Vector3f carPosition = car.getPosition();
-        Vector3f carRotation = car.getRotation();
-        Vector3f[] wheelPositions = car.getWheelPositions();
-        float steeringAngle = car.getSteeringAngle();
-        float wheelRotation = car.getWheelRotation();
-        float wheelRadius = car.getWheelRadius();
+        Vector3f carPosition = car.position;
+        Vector3f carRotation = car.rotation;
+        Vector3f[] wheelPositions = car.wheelPositions;
+        float steeringAngle = car.steeringAngle;
+        float wheelRotation = car.wheelSpinAngle;
+        float wheelRadius = car.wheelRadius;
         float wheelDiameter = wheelRadius * 2;
 
         carMesh.setPosition(carPosition);
@@ -377,7 +308,8 @@ public class Game implements IGameLogic {
         rearRightMesh.setRotation(0, carRotation.y + 180, -wheelRotation);
         rearRightMesh.setScale(wheelDiameter);
 
-        hud.setStatusText("Speed: " + Physics.convertMPStoKMH(car.forwardSpeed));
+        hud.setStatusText("Speed: " + Physics.convertMPStoKMH(car.forwardSpeed) + "KM/H");
+
         if(EngineOptions.DEBUG)
         {
             totalUpdates++;
@@ -385,45 +317,21 @@ public class Game implements IGameLogic {
             testCube.update(interval);
             testCubeMesh_1.setPosition(testCube.getPosition());
 
-            float debugLineLenghtDivider = 8000;
-            float debugForwardForce = car.forwardForce / debugLineLenghtDivider;
-            float debugRadialForce = car.radialForce / debugLineLenghtDivider;
-
-            debugFrontForward.setPosition(wheelPositions[1]);
-            debugFrontForward.getPosition().y = 0.1f;
-            debugFrontForward.setRotation(0, carRotation.y + steeringAngle, 0);
-            debugFrontForward.setScale(debugForwardForce, 1, 1);
-
-            debugFrontLeft.setPosition(wheelPositions[1]);
-            debugFrontLeft.getPosition().y = 0.1f;
-            debugFrontLeft.setRotation(0, carRotation.y + 90 + steeringAngle, 0);
-            debugFrontLeft.setScale(-debugRadialForce, 1, 1);
-
-            debugRearForward.setPosition(wheelPositions[3]);
-            debugRearForward.getPosition().y = 0.1f;
-            debugRearForward.setRotation(0, carRotation.y, 0);
-            debugRearForward.setScale(debugForwardForce, 1, 1);
-
-            debugRearLeft.setPosition(wheelPositions[3]);
-            debugRearLeft.getPosition().y = 0.1f;
-            debugRearLeft.setRotation(0, carRotation.y + 90, 0);
-            debugRearLeft.setScale(-debugRadialForce, 1, 1);
-
             debugArrowRadius.setPosition(car.rearWheelsPosition);
             debugArrowRadius.getPosition().y = 0.1f;
             debugArrowRadius.setRotation(0, carRotation.y + 90, 0);
             debugArrowRadius.setScale(car.turningRadius, 1, 1);
+
+            hud.updateDebugHUD(car.combinedForces, car.maxFrontAxleForce, car.maxRearAxleForce);
         }
     }
 
-    private void updateCameraAndCompass(MouseInput mouseInput, float interval)
+    private void updateCamera(MouseInput mouseInput, float interval)
     {
         if (mouseInput.isRightButtonPressed())
         {
             Vector2f rotVec = mouseInput.getDisplVec();
             camera.moveRotation(rotVec.x * MOUSE_SENSITIVITY, rotVec.y * MOUSE_SENSITIVITY, 0);
-
-            hud.rotateCompass(camera.getRotation().y);
         }
         camera.movePosition(cameraIncrement.x * interval, cameraIncrement.y * interval, cameraIncrement.z * interval);
     }

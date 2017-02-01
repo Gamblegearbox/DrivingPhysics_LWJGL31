@@ -1,7 +1,7 @@
 package engine.gameEntities;
 
 import engine.mesh.Mesh;
-import engine.utils.Physics;
+import engine.physics.Physics;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 

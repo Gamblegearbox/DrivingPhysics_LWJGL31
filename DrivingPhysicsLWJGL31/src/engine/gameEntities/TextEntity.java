@@ -41,6 +41,11 @@ public class TextEntity extends GameEntity {
         float tileWidth = (float)texture.getWidth() / (float)numCols;
         float tileHeight = (float)texture.getHeight() / (float)numRows;
 
+        // normalize text tile size
+        float ratio = tileWidth / tileHeight;
+        tileHeight = 1f;
+        tileWidth = tileHeight * ratio;
+
         for(int i=0; i<numChars; i++) {
             byte currChar = chars[i];
             int col = currChar % numCols;
@@ -49,7 +54,7 @@ public class TextEntity extends GameEntity {
             // Build a character tile composed by two triangles
 
             // Left Top vertex
-            positions.add((float)i*tileWidth); // x
+            positions.add((float)i * tileWidth); // x
             positions.add(0.0f); //y
             positions.add(ZPOS); //z
             textCoords.add((float)col / (float)numCols );
@@ -57,7 +62,7 @@ public class TextEntity extends GameEntity {
             indices.add(i*VERTICES_PER_QUAD);
 
             // Left Bottom vertex
-            positions.add((float)i*tileWidth); // x
+            positions.add((float)i * tileWidth); // x
             positions.add(tileHeight); //y
             positions.add(ZPOS); //z
             textCoords.add((float)col / (float)numCols );
@@ -65,7 +70,7 @@ public class TextEntity extends GameEntity {
             indices.add(i*VERTICES_PER_QUAD + 1);
 
             // Right Bottom vertex
-            positions.add((float)i*tileWidth + tileWidth); // x
+            positions.add((float)i * tileWidth + tileWidth); // x
             positions.add(tileHeight); //y
             positions.add(ZPOS); //z
             textCoords.add((float)(col + 1)/ (float)numCols );
@@ -73,7 +78,7 @@ public class TextEntity extends GameEntity {
             indices.add(i*VERTICES_PER_QUAD + 2);
 
             // Right Top vertex
-            positions.add((float)i*tileWidth + tileWidth); // x
+            positions.add((float)i * tileWidth + tileWidth); // x
             positions.add(0.0f); //y
             positions.add(ZPOS); //z
             textCoords.add((float)(col + 1)/ (float)numCols );
