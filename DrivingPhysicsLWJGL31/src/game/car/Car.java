@@ -39,16 +39,17 @@ public class Car {
     private GroundType currentGround;
     public float maxFrontAxleForce;
     public float maxRearAxleForce;
+    public float weightShiftModifier;
 
     public float forwardAcceleration;
     public float forwardForce;
-    public float forwardSpeed;
+    public float speed;
     public float radialForce;
     public float turningRadius;
 
     public Car()
     {
-        maxSteeringAngle = 30f;
+        maxSteeringAngle = 20f;
         wheelBase = 3.15f;
         halfWheelBase = wheelBase / 2f;
         halfTrackWidth = 0.83f;
@@ -56,8 +57,9 @@ public class Car {
         wheelRadius = 0.43f;
         suspensionHeight = 0.1f;
         mass = 2000;
+        weightShiftModifier = 0.0f;
         maxEngineForce = 12000;
-        maxBrakeForce = 12000;
+        maxBrakeForce = 24000;
 
         position = new Vector3f();
         frontWheelsForward = new Vector3f();
@@ -81,33 +83,56 @@ public class Car {
             if(EngineOptions.DEBUG)
             {
                 System.out.println(currentGround.getType());
-                System.out.println("C_Roll: " + currentGround.getRollingFriction());
-                System.out.println("U_Gleit: " + currentGround.getSlidingFriction());
-                System.out.println("U_Haft: " + currentGround.getStaticFriction());
+                System.out.println("C_ROLL: " + currentGround.getRollingFriction());
+                System.out.println("U_SLIDE: " + currentGround.getSlidingFriction());
+                System.out.println("U_STATIC: " + currentGround.getStaticFriction());
+                System.out.println();
             }
         }
 
+        // calculate maximum force the axles can put on the current ground
+        float weightInNewton = Physics.calcWeight(mass);
+        maxFrontAxleForce = currentGround.getStaticFriction() * weightInNewton;
+        maxRearAxleForce = currentGround.getStaticFriction() * weightInNewton;
+
+        // apply weight shift modifier
+        weightShiftModifier = (-throttleInput + brakeInput) / 3;
+        float temp = maxFrontAxleForce * weightShiftModifier;
+        maxFrontAxleForce += temp;
+        maxRearAxleForce -= temp;
+
         // use input to adjust steering and calculate force acceleration and speed in longitudinal direction
         steeringAngle = maxSteeringAngle * steeringInput;
-        forwardForce = maxEngineForce * throttleInput - maxBrakeForce * brakeInput;
+        forwardForce = maxEngineForce * throttleInput;
 
+        // calculate turning radius and radial force
         turningRadius = Physics.calcTurningRadius(wheelBase, steeringAngle);
-        radialForce = Physics.calcRedialForce(mass, forwardSpeed, turningRadius);
-
-        float weightInNewton = Physics.calcWeight(mass);
-        maxFrontAxleForce = currentGround.getStaticFriction() * weightInNewton; // TODO: maybe us a modifier to alter over or understeer?!
-        maxRearAxleForce = currentGround.getStaticFriction() * weightInNewton;  // TODO: maybe us a modifier to alter over or understeer?!
-        System.out.println(maxFrontAxleForce);
+        radialForce = Physics.calcRedialForce(mass, speed, turningRadius);
 
         // subtract rollresistace force from forwardforce if speed is !0
         float rollFrictionForce = currentGround.getRollingFriction() * weightInNewton;
-        forwardForce -= rollFrictionForce;
+
+        if(speed > 0)
+        {
+            forwardForce -= rollFrictionForce;
+        }
+
+        if(brakeInput > 0)
+        {
+            if(speed > 0)
+            {
+                forwardForce -= maxBrakeForce * brakeInput;
+            }
+        }
 
         // subtract static friction force from overall force if speed is 0
         // subtract dynamic friction force from overall force if sliding
 
+
+
+
         forwardAcceleration = Physics.calcAcceleration(mass, forwardForce);
-        forwardSpeed += forwardAcceleration * interval;
+        speed += forwardAcceleration * interval;
         combinedForces = new Vector2f(forwardForce, -radialForce);
 
         // calculate rotation in radians for upcoming rearWheelsForward vector calculation
@@ -127,12 +152,12 @@ public class Car {
         frontWheelsPosition = new Vector3f(position).add(new Vector3f(rearWheelsForward).mul(halfWheelBase));
         rearWheelsPosition = new Vector3f(position).add(new Vector3f(rearWheelsForward).mul(-halfWheelBase));
 
-        frontWheelsPosition.add(new Vector3f(frontWheelsForward).mul(forwardSpeed * interval));
-        rearWheelsPosition.add(new Vector3f(rearWheelsForward).mul(forwardSpeed * interval));
+        frontWheelsPosition.add(new Vector3f(frontWheelsForward).mul(speed * interval));
+        rearWheelsPosition.add(new Vector3f(rearWheelsForward).mul(speed * interval));
 
-        Vector3f temp = new Vector3f(frontWheelsPosition).add(rearWheelsPosition);
-        temp.div(2f);
-        position = new Vector3f(temp);
+        Vector3f tempV = new Vector3f(frontWheelsPosition).add(rearWheelsPosition);
+        tempV.div(2f);
+        position = new Vector3f(tempV);
 
         // set car angles
         float newCarAngleInRad = (float)Math.atan2(frontWheelsPosition.z - rearWheelsPosition.z, frontWheelsPosition.x - rearWheelsPosition.x);
@@ -152,13 +177,14 @@ public class Car {
         float maxWeightShiftFrontBack = 3;
         float maxWeightShiftLeftRight = 7;
         float weightShiftFrontBackAngle = maxWeightShiftFrontBack * forwardForce / maxEngineForce;
-        float weightShiftLeftRightAngle = forwardSpeed/2;
+
+        float weightShiftLeftRightAngle = speed / 2;
         if(weightShiftLeftRightAngle > maxWeightShiftLeftRight)
         {
             weightShiftLeftRightAngle = maxWeightShiftLeftRight;
         }
         weightShiftLeftRightAngle *= steeringInput;
-        wheelSpinAngle -= forwardSpeed;
+        wheelSpinAngle -= speed;
 
         // Final position and rotation fixes
         position.y = wheelRadius + suspensionHeight;

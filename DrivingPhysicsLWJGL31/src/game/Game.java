@@ -308,7 +308,7 @@ public class Game implements IGameLogic {
         rearRightMesh.setRotation(0, carRotation.y + 180, -wheelRotation);
         rearRightMesh.setScale(wheelDiameter);
 
-        hud.setStatusText("Speed: " + Physics.convertMPStoKMH(car.forwardSpeed) + "KM/H");
+        hud.setStatusText("Speed: " + Physics.convertMPStoKMH(car.speed) + "KM/H");
 
         if(EngineOptions.DEBUG)
         {
