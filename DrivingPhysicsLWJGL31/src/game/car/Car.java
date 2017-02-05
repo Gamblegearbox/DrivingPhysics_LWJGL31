@@ -109,12 +109,42 @@ public class Car {
         turningRadius = Physics.calcTurningRadius(wheelBase, steeringAngle);
         radialForce = Physics.calcRedialForce(mass, speed, turningRadius);
 
-        // subtract rollresistace force from forwardforce if speed is !0
-        float rollFrictionForce = currentGround.getRollingFriction() * weightInNewton;
+        combinedForces = new Vector2f(forwardForce, -radialForce);
 
-        if(speed > 0)
+        boolean isFrontAxleSliding;
+        if(combinedForces.length() > maxFrontAxleForce)
         {
-            forwardForce -= rollFrictionForce;
+            isFrontAxleSliding = true;
+            // subtract dynamic friction force from frontAxle force if sliding
+        }
+        else
+        {
+            isFrontAxleSliding = false;
+            // subtract rollresistace force from frontAxle if speed is !0
+            float rollFrictionForce = currentGround.getRollingFriction() * weightInNewton;
+            if(speed > 0)
+            {
+                forwardForce -= rollFrictionForce / 2;
+            }
+
+        }
+
+        boolean isRearAxleSliding;
+        if(combinedForces.length() > maxRearAxleForce)
+        {
+            isRearAxleSliding = true;
+            // subtract dynamic friction force from rearAxle force if sliding
+        }
+        else
+        {
+            isRearAxleSliding = false;
+            // subtract rollresistace force from rearAxle if speed is !0
+            float rollFrictionForce = currentGround.getRollingFriction() * weightInNewton;
+            if(speed > 0)
+            {
+                forwardForce -= rollFrictionForce / 2;
+            }
+
         }
 
         if(brakeInput > 0)
@@ -125,35 +155,44 @@ public class Car {
             }
         }
 
-        // subtract static friction force from overall force if speed is 0
-        // subtract dynamic friction force from overall force if sliding
-
-
-
-
         forwardAcceleration = Physics.calcAcceleration(mass, forwardForce);
         speed += forwardAcceleration * interval;
-        combinedForces = new Vector2f(forwardForce, -radialForce);
+
 
         // calculate rotation in radians for upcoming rearWheelsForward vector calculation
         float degToRad = (float)Math.toRadians(carDirectionAngle);
         float degToRadInclSteering = (float)Math.toRadians(carDirectionAngle - steeringAngle);
 
         // calculate rearWheelsForward and rearWheelsLeft direction of the steered wheel
-        frontWheelsForward.x = (float)Math.cos(degToRadInclSteering);
-        frontWheelsForward.z = (float)Math.sin(degToRadInclSteering);
+        frontWheelsForward.x = (float) Math.cos(degToRadInclSteering);
+        frontWheelsForward.z = (float) Math.sin(degToRadInclSteering);
         frontWheelsLeft = new Vector3f(new Vector3f(carUp).cross(new Vector3f(frontWheelsForward)));
 
         // calculate rearWheelsForward and rearWheelsLeft direction of the car
-        rearWheelsForward.x = (float)Math.cos(degToRad);
-        rearWheelsForward.z = (float)Math.sin(degToRad);
+        rearWheelsForward.x = (float) Math.cos(degToRad);
+        rearWheelsForward.z = (float) Math.sin(degToRad);
         rearWheelsLeft = new Vector3f(new Vector3f(carUp).cross(new Vector3f(rearWheelsForward)));
 
         frontWheelsPosition = new Vector3f(position).add(new Vector3f(rearWheelsForward).mul(halfWheelBase));
-        rearWheelsPosition = new Vector3f(position).add(new Vector3f(rearWheelsForward).mul(-halfWheelBase));
+        if(isFrontAxleSliding)
+        {
+            frontWheelsPosition.add(new Vector3f(rearWheelsForward).mul(speed * interval));
+        }
+        else
+        {
+            frontWheelsPosition.add(new Vector3f(frontWheelsForward).mul(speed * interval));
+        }
 
-        frontWheelsPosition.add(new Vector3f(frontWheelsForward).mul(speed * interval));
-        rearWheelsPosition.add(new Vector3f(rearWheelsForward).mul(speed * interval));
+        rearWheelsPosition = new Vector3f(position).add(new Vector3f(rearWheelsForward).mul(-halfWheelBase));
+        if(isRearAxleSliding)
+        {
+            rearWheelsPosition.add(new Vector3f(rearWheelsForward).mul(speed * interval));
+        }
+        else
+        {
+            rearWheelsPosition.add(new Vector3f(rearWheelsForward).mul(speed * interval));
+        }
+
 
         Vector3f tempV = new Vector3f(frontWheelsPosition).add(rearWheelsPosition);
         tempV.div(2f);
@@ -177,8 +216,7 @@ public class Car {
         float maxWeightShiftFrontBack = 3;
         float maxWeightShiftLeftRight = 7;
         float weightShiftFrontBackAngle = maxWeightShiftFrontBack * forwardForce / maxEngineForce;
-
-        float weightShiftLeftRightAngle = speed / 2;
+        float weightShiftLeftRightAngle = speed / 4;
         if(weightShiftLeftRightAngle > maxWeightShiftLeftRight)
         {
             weightShiftLeftRightAngle = maxWeightShiftLeftRight;
@@ -204,36 +242,5 @@ public class Car {
         return result;
     }
 
-
-
-
-
-
-
-
-
-
-
-    private float calcFriction(float speed, float interval)
-    {
-        float result = speed;
-        //TODO: MASSE MUSS MIT REIN!!
-        float C_R = 0.4f;
-        float C_H = 0.5f;
-
-        if (Math.abs(speed) > (0.5f * C_H * Physics.G * interval))
-        {
-            if (speed > 0)
-            {
-                result = speed - ((0.5f * C_R * Physics.G * interval));
-            }
-        }
-        else
-        {
-            result = 0;
-        }
-
-        return result;
-    }
 
 }
