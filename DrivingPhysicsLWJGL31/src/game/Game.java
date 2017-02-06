@@ -8,6 +8,7 @@ import engine.gameEntities.GameEntity;
 import engine.mesh.Mesh;
 import engine.interfaces.IGameLogic;
 import engine.physics.PROTO_Rigidbody;
+import engine.physics.Particle;
 import engine.scene.Scene;
 import engine.shading.Material;
 import engine.texture.Texture;
@@ -23,6 +24,7 @@ import org.joml.Vector2f;
 import org.joml.Vector3f;
 
 import java.util.ArrayList;
+import java.util.Random;
 
 import static org.lwjgl.glfw.GLFW.*;
 
@@ -50,6 +52,8 @@ public class Game implements IGameLogic {
     private GameEntity frontRightMesh;
     private GameEntity rearLeftMesh;
     private GameEntity rearRightMesh;
+    private GameEntity[] smokeEntities;
+    private Particle[] smokeParticles;
 
     private PROTO_Rigidbody testCube;
     private GameEntity testCubeMesh_1;
@@ -130,6 +134,18 @@ public class Game implements IGameLogic {
         rearLeftMesh = new GameEntity(mesh);
         rearRightMesh = new GameEntity(mesh);
 
+        smokeEntities = new GameEntity[100];
+        smokeParticles = new Particle[smokeEntities.length];
+        mesh = DebugMeshes.buildQuad();
+        mesh.setMaterial(Materials.WHITE);
+        Random random = new Random();
+        for(int i = 0; i < smokeEntities.length; i++)
+        {
+            smokeParticles[i] = new Particle(random.nextInt(250), random.nextFloat(), random.nextFloat() * 0.5f, random.nextFloat() * 0.005f, random.nextFloat() * 0.001f);
+            smokeEntities[i] = new GameEntity(mesh);
+            smokeEntities[i].getPosition().y = 2f;
+        }
+
         // add objects to List of GameItems
         ArrayList<GameEntity> gameEntities = new ArrayList<>();
         gameEntities.add(ground);
@@ -139,6 +155,11 @@ public class Game implements IGameLogic {
         gameEntities.add(frontRightMesh);
         gameEntities.add(rearLeftMesh);
         gameEntities.add(rearRightMesh);
+        for(int i = 0; i < smokeEntities.length; i++)
+        {
+            gameEntities.add(smokeEntities[i]);
+        }
+
 
         // create debug objects
         if(EngineOptions.DEBUG)
@@ -270,6 +291,8 @@ public class Game implements IGameLogic {
 
     }
 
+    int counter = 0;
+
     @Override
     public void update(float interval, MouseInput mouseInput)
     {
@@ -285,6 +308,27 @@ public class Game implements IGameLogic {
         float wheelRotation = car.wheelSpinAngle;
         float wheelRadius = car.wheelRadius;
         float wheelDiameter = wheelRadius * 2;
+
+        for(int i = 0; i < smokeParticles.length; i++)
+        {
+            Particle particle = smokeParticles[i];
+            particle.update();
+
+            if(smokeParticles[i].isActive)
+            {
+                smokeEntities[i].getPosition().y += particle.riseSpeed;
+                smokeEntities[i].setRotation(0, particle.rotation, 0);
+                smokeEntities[i].setScale(particle.size);
+            }
+            else
+            {
+                particle.isActive = true;
+                smokeEntities[i].setPosition(wheelPositions[counter%4]);
+                smokeEntities[i].getPosition().y = 0.001f;
+            }
+        }
+        counter++;
+        counter%= smokeEntities.length;
 
         carMesh.setPosition(carPosition);
         carMesh.setRotation(carRotation);

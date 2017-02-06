@@ -8,13 +8,6 @@ in mat4 outModelViewMatrix;
 
 out vec4 fragColor;
 
-struct Attenuation
-{
-    float constant;
-    float linear;
-    float exponent;
-};
-
 struct DirectionalLight
 {
     vec3 colour;
@@ -26,7 +19,6 @@ struct Material
 {
     vec3 colour;
     int hasTexture;
-    int hasNormalMap;
     float reflectance;
 };
 
@@ -86,53 +78,12 @@ vec4 calcBaseColour(Material material, vec2 text_coord)
     return baseColour;
 }
 
-vec3 calcNormal(Material material, vec3 normal, vec2 text_coord, mat4 modelViewMatrix)
-{
-    vec3 newNormal = normal;
-    if ( material.hasNormalMap == 1 )
-    {
-        newNormal = texture(normalMap, text_coord).rgb;
-        newNormal = normalize(newNormal * 2 - 1);
-        newNormal = normalize(modelViewMatrix * vec4(newNormal, 0.0)).xyz;
-    }
-    return newNormal;
-}
-
-float calcShadow(vec4 position)
-{
-    vec3 projCoords = position.xyz;
-    // Transform from screen coordinates to texture coordinates
-    projCoords = projCoords * 0.5 + 0.5;
-    float bias = 0.05;
-
-    float shadowFactor = 0.0;
-    vec2 inc = 1.0 / textureSize(shadowMap, 0);
-    for(int row = -1; row <= 1; ++row)
-    {
-        for(int col = -1; col <= 1; ++col)
-        {
-            float textDepth = texture(shadowMap, projCoords.xy + vec2(row, col) * inc).r;
-            shadowFactor += projCoords.z - bias > textDepth ? 1.0 : 0.0;
-        }
-    }
-    shadowFactor /= 9.0;
-
-    if(projCoords.z > 1.0)
-    {
-        shadowFactor = 1.0;
-    }
-
-    return 1 - shadowFactor;
-}
-
 void main()
 {
     vec4 baseColour = calcBaseColour(material, outTexCoord);
-    vec3 currNomal = calcNormal(material, mvVertexNormal, outTexCoord, outModelViewMatrix);
+    vec3 currNomal = mvVertexNormal;
     vec4 totalLight = calcDirectionalLight(directionalLight, mvVertexPos, currNomal);
 
-    float shadow = calcShadow(mlightviewVertexPos);
-    //fragColor = baseColour * ( vec4(ambientLight, 1.0) + totalLight * shadow);
     fragColor = baseColour * ( vec4(ambientLight, 1.0) + totalLight);
 
 }

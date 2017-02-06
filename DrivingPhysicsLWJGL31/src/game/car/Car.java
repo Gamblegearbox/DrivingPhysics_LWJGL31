@@ -96,10 +96,12 @@ public class Car {
         maxRearAxleForce = currentGround.getStaticFriction() * weightInNewton;
 
         // apply weight shift modifier
+        /*
         weightShiftModifier = (-throttleInput + brakeInput) / 3;
         float temp = maxFrontAxleForce * weightShiftModifier;
         maxFrontAxleForce += temp;
         maxRearAxleForce -= temp;
+        */
 
         // use input to adjust steering and calculate force acceleration and speed in longitudinal direction
         steeringAngle = maxSteeringAngle * steeringInput;
@@ -107,44 +109,15 @@ public class Car {
 
         // calculate turning radius and radial force
         turningRadius = Physics.calcTurningRadius(wheelBase, steeringAngle);
-        radialForce = Physics.calcRedialForce(mass, speed, turningRadius);
+        radialForce = Physics.calcRadialForce(mass, speed, turningRadius);
 
-        combinedForces = new Vector2f(forwardForce, -radialForce);
+        // REAR AXLE FORWARD FORCE
 
-        boolean isFrontAxleSliding;
-        if(combinedForces.length() > maxFrontAxleForce)
+
+        float rollFrictionForce = currentGround.getRollingFriction() * weightInNewton;
+        if(speed > 0)
         {
-            isFrontAxleSliding = true;
-            // subtract dynamic friction force from frontAxle force if sliding
-        }
-        else
-        {
-            isFrontAxleSliding = false;
-            // subtract rollresistace force from frontAxle if speed is !0
-            float rollFrictionForce = currentGround.getRollingFriction() * weightInNewton;
-            if(speed > 0)
-            {
-                forwardForce -= rollFrictionForce / 2;
-            }
-
-        }
-
-        boolean isRearAxleSliding;
-        if(combinedForces.length() > maxRearAxleForce)
-        {
-            isRearAxleSliding = true;
-            // subtract dynamic friction force from rearAxle force if sliding
-        }
-        else
-        {
-            isRearAxleSliding = false;
-            // subtract rollresistace force from rearAxle if speed is !0
-            float rollFrictionForce = currentGround.getRollingFriction() * weightInNewton;
-            if(speed > 0)
-            {
-                forwardForce -= rollFrictionForce / 2;
-            }
-
+            forwardForce -= rollFrictionForce;
         }
 
         if(brakeInput > 0)
@@ -154,6 +127,7 @@ public class Car {
                 forwardForce -= maxBrakeForce * brakeInput;
             }
         }
+        combinedForces = new Vector2f(forwardForce, -radialForce);
 
         forwardAcceleration = Physics.calcAcceleration(mass, forwardForce);
         speed += forwardAcceleration * interval;
@@ -174,7 +148,7 @@ public class Car {
         rearWheelsLeft = new Vector3f(new Vector3f(carUp).cross(new Vector3f(rearWheelsForward)));
 
         frontWheelsPosition = new Vector3f(position).add(new Vector3f(rearWheelsForward).mul(halfWheelBase));
-        if(isFrontAxleSliding)
+        if(combinedForces.length() > maxFrontAxleForce)
         {
             frontWheelsPosition.add(new Vector3f(rearWheelsForward).mul(speed * interval));
         }
@@ -184,7 +158,7 @@ public class Car {
         }
 
         rearWheelsPosition = new Vector3f(position).add(new Vector3f(rearWheelsForward).mul(-halfWheelBase));
-        if(isRearAxleSliding)
+        if(combinedForces.length() > maxRearAxleForce)
         {
             rearWheelsPosition.add(new Vector3f(rearWheelsForward).mul(speed * interval));
         }
@@ -239,7 +213,7 @@ public class Car {
         else if(temp > 10 && temp <= 30) {result = GroundTypes.SAND_SOFT; }
         else {result = GroundTypes.SNOW; }
 
-        return result;
+        return GroundTypes.ROAD;
     }
 
 

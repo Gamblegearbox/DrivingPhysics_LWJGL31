@@ -96,6 +96,28 @@ public class DebugMeshes {
         return new Mesh(positions, texCoords, normals, indices);
     }
 
+    public static Mesh buildQuad()
+    {
+        float halfSize = 0.5f;
+
+        float[] positions = new float[]{
+                -halfSize, 0.0f, -halfSize,
+                -halfSize, 0.0f, halfSize,
+                halfSize, 0.0f, -halfSize,
+                halfSize, 0.0f, halfSize
+        };
+        float[] texCoords = new float[]{0, 1, 0, 1, 0, 1, 0, 1};
+        float[] normals = new float[]{
+                0, 1, 0,
+                0, 1, 0,
+                0, 1, 0,
+                0, 1, 0
+        };
+        int[] indices = new int[]{0, 1, 2, 2, 1, 3};
+
+        return new Mesh(positions, texCoords, normals, indices);
+    }
+
     public static Mesh buildline()
     {
         float[] positions = new float[]{

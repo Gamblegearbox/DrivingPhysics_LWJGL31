@@ -25,7 +25,7 @@ public class Physics
         return (wheelbase /(float)Math.sin(Math.toRadians(steeringAngle))) - magicOffset;
     }
 
-    public static float calcRedialForce(float mass, float speed, float turningRadius)
+    public static float calcRadialForce(float mass, float speed, float turningRadius)
     {
         return mass * ((speed * speed) / turningRadius);
     }

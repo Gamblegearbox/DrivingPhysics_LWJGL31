@@ -13,11 +13,8 @@ import static org.lwjgl.opengl.GL20.*;
 public class ShaderProgram {
 
     private final int programId;
-
     private int vertexShaderId;
-
     private int fragmentShaderId;
-
     private final Map<String, UniformData> uniforms;
 
     public ShaderProgram() throws Exception
@@ -51,7 +48,6 @@ public class ShaderProgram {
     {
         createUniform(uniformName + ".colour");
         createUniform(uniformName + ".hasTexture");
-        createUniform(uniformName + ".hasNormalMap");
         createUniform(uniformName + ".reflectance");
     }
 
@@ -115,7 +111,6 @@ public class ShaderProgram {
     {
         setUniform(uniformName + ".colour", material.getColour());
         setUniform(uniformName + ".hasTexture", material.isTextured() ? 1 : 0);
-        setUniform(uniformName + ".hasNormalMap", material.hasNormalMap() ? 1 : 0);
         setUniform(uniformName + ".reflectance", material.getReflectance());
     }
 
