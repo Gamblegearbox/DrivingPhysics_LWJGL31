@@ -32,8 +32,8 @@ public class Game implements IGameLogic {
 
 
     private static final float MOUSE_SENSITIVITY = 0.2f;
-    private static final float INPUT_PEDAL_INCREASE = 0.05f;
-    private static final float INPUT_PEDAL_DECREASE = 0.075f;
+    private static final float INPUT_PEDAL_INCREASE = 0.02f;
+    private static final float INPUT_PEDAL_DECREASE = 0.06f;
     private static final float INPUT_STEERING_SPEED = 0.1f;
     private static final float INPUT_MAX_VALUE = 1.0f;
     private static final float CAMERA_SPEED = 5f;
@@ -305,7 +305,8 @@ public class Game implements IGameLogic {
         Vector3f carRotation = car.rotation;
         Vector3f[] wheelPositions = car.wheelPositions;
         float steeringAngle = car.steeringAngle;
-        float wheelRotation = car.wheelSpinAngle;
+        float frontWheelRotation = car.frontWheelSpinAngle;
+        float rearWheelRotation = car.rearWheelSpinAngle;
         float wheelRadius = car.wheelRadius;
         float wheelDiameter = wheelRadius * 2;
 
@@ -337,19 +338,19 @@ public class Game implements IGameLogic {
         axleMesh.setRotation(0, carRotation.y, 0);
 
         frontLeftMesh.setPosition(wheelPositions[1]);
-        frontLeftMesh.setRotation(0, carRotation.y + steeringAngle, wheelRotation);
+        frontLeftMesh.setRotation(0, carRotation.y + steeringAngle, frontWheelRotation);
         frontLeftMesh.setScale(wheelDiameter);
 
         frontRightMesh.setPosition(wheelPositions[0]);
-        frontRightMesh.setRotation(0, carRotation.y + 180 + steeringAngle, -wheelRotation);
+        frontRightMesh.setRotation(0, carRotation.y + 180 + steeringAngle, -frontWheelRotation);
         frontRightMesh.setScale(wheelDiameter);
 
         rearLeftMesh.setPosition(wheelPositions[3]);
-        rearLeftMesh.setRotation(0, carRotation.y, wheelRotation);
+        rearLeftMesh.setRotation(0, carRotation.y, rearWheelRotation);
         rearLeftMesh.setScale(wheelDiameter);
 
         rearRightMesh.setPosition(wheelPositions[2]);
-        rearRightMesh.setRotation(0, carRotation.y + 180, -wheelRotation);
+        rearRightMesh.setRotation(0, carRotation.y + 180, -rearWheelRotation);
         rearRightMesh.setScale(wheelDiameter);
 
         hud.setStatusText("Speed: " + Physics.convertMPStoKMH(car.speed) + "KM/H");

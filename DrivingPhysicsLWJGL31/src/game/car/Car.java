@@ -22,7 +22,8 @@ public class Car {
 
     public float steeringAngle;
     private float carDirectionAngle;
-    public float wheelSpinAngle;
+    public float frontWheelSpinAngle;
+    public float rearWheelSpinAngle;
 
     public Vector3f position;
     public Vector3f frontWheelsPosition;
@@ -96,12 +97,12 @@ public class Car {
         maxRearAxleForce = currentGround.getStaticFriction() * weightInNewton;
 
         // apply weight shift modifier
-        /*
-        weightShiftModifier = (-throttleInput + brakeInput) / 3;
+
+        weightShiftModifier = (-throttleInput + brakeInput) / 2;
         float temp = maxFrontAxleForce * weightShiftModifier;
         maxFrontAxleForce += temp;
         maxRearAxleForce -= temp;
-        */
+
 
         // use input to adjust steering and calculate force acceleration and speed in longitudinal direction
         steeringAngle = maxSteeringAngle * steeringInput;
@@ -111,27 +112,65 @@ public class Car {
         turningRadius = Physics.calcTurningRadius(wheelBase, steeringAngle);
         radialForce = Physics.calcRadialForce(mass, speed, turningRadius);
 
-        // REAR AXLE FORWARD FORCE
-
-
+        boolean breaking = brakeInput > 0 ? true : false;
+        boolean frontBlocking = false;
+        boolean rearBlocking = false;
         float rollFrictionForce = currentGround.getRollingFriction() * weightInNewton;
-        if(speed > 0)
-        {
-            forwardForce -= rollFrictionForce;
-        }
+        float slideFrictionForce = currentGround.getSlidingFriction() * weightInNewton;
+        float frontForwardForce;
+        float rearForwardForce;
 
-        if(brakeInput > 0)
+        // CALC FRONT AXLE FORWARD FORCE
+        if(breaking)
         {
-            if(speed > 0)
+            frontForwardForce = -(maxBrakeForce * brakeInput) / 2f;
+            if(frontForwardForce < -maxFrontAxleForce)
             {
-                forwardForce -= maxBrakeForce * brakeInput;
+                frontBlocking = true;
+                System.out.println("FRONT BLOCKING");
+                frontForwardForce = -slideFrictionForce / 2f;
+            }
+            else
+            {
+                frontForwardForce = -rollFrictionForce / 2f;
             }
         }
+        else
+        {
+            frontForwardForce = -rollFrictionForce / 2f;
+        }
+
+        // CALC REAR AXLE FORWARD FORCE
+        if(breaking)
+        {
+            rearForwardForce = -(maxBrakeForce * brakeInput) / 2f;
+            if(rearForwardForce < -maxRearAxleForce)
+            {
+                rearBlocking = true;
+                System.out.println("REAR BLOCKING");
+                rearForwardForce = -slideFrictionForce / 2f;
+            }
+            else
+            {
+                frontForwardForce = -rollFrictionForce / 2f;
+            }
+        }
+        else
+        {
+            rearForwardForce = -rollFrictionForce / 2f;
+        }
+
+        forwardForce += (frontForwardForce + rearForwardForce);
+
         combinedForces = new Vector2f(forwardForce, -radialForce);
 
         forwardAcceleration = Physics.calcAcceleration(mass, forwardForce);
         speed += forwardAcceleration * interval;
 
+        if(speed < 0 )
+        {
+            speed = 0;
+        }
 
         // calculate rotation in radians for upcoming rearWheelsForward vector calculation
         float degToRad = (float)Math.toRadians(carDirectionAngle);
@@ -150,7 +189,7 @@ public class Car {
         frontWheelsPosition = new Vector3f(position).add(new Vector3f(rearWheelsForward).mul(halfWheelBase));
         if(combinedForces.length() > maxFrontAxleForce)
         {
-            frontWheelsPosition.add(new Vector3f(rearWheelsForward).mul(speed * interval));
+            frontWheelsPosition.add(new Vector3f(frontWheelsForward).mul(speed * interval));
         }
         else
         {
@@ -196,7 +235,24 @@ public class Car {
             weightShiftLeftRightAngle = maxWeightShiftLeftRight;
         }
         weightShiftLeftRightAngle *= steeringInput;
-        wheelSpinAngle -= speed;
+
+        if(frontBlocking)
+        {
+            frontWheelSpinAngle -= 0;
+        }
+        else
+        {
+            frontWheelSpinAngle -= speed;
+        }
+
+        if(rearBlocking)
+        {
+            rearWheelSpinAngle -= 0;
+        }
+        else
+        {
+            rearWheelSpinAngle -= speed;
+        }
 
         // Final position and rotation fixes
         position.y = wheelRadius + suspensionHeight;
