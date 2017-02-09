@@ -85,7 +85,7 @@ public class Hud implements IHud {
         compassItem.setRotation(0, 0, -angle + 180);
     }
 
-    public void updateDebugHUD(Vector2f forces, float maxFrontAxleForce, float maxRearAxleForce)
+    public void updateDebugHUD(float frontForwardForce, float rearForwardForce, float maxFrontAxleForce, float maxRearAxleForce)
     {
         if(EngineOptions.DEBUG)
         {
@@ -93,13 +93,13 @@ public class Hud implements IHud {
             debugCircle_maxFrontAxleForce.setScale(maxFrontAxleForce * scaleModifier);
             debugCircle_maxRearAxleForce.setScale(maxRearAxleForce * scaleModifier);
 
-            debugLine_FrontForce.setScale(DEBUG_DETAILS_SIZE, forces.length() * scaleModifier, 1);
-            debugLine_RearForce.setScale(DEBUG_DETAILS_SIZE, forces.length() * scaleModifier, 1);
+            debugLine_FrontForce.setScale(DEBUG_DETAILS_SIZE, frontForwardForce * scaleModifier, 1);
+            debugLine_RearForce.setScale(DEBUG_DETAILS_SIZE, rearForwardForce * scaleModifier, 1);
 
-            float forceAngle = (float) Math.atan2(forces.y - 0, forces.x - 0);
-            float toDegrees = (float)Math.toDegrees(forceAngle);
-            debugLine_FrontForce.setRotation(0, 0, toDegrees + 180);
-            debugLine_RearForce.setRotation(0, 0, toDegrees + 180);
+            //float forceAngle = (float) Math.atan2(forces.y - 0, forces.x - 0);
+            //float toDegrees = (float)Math.toDegrees(forceAngle);
+            debugLine_FrontForce.setRotation(0, 0, 180);
+            debugLine_RearForce.setRotation(0, 0, 180);
         }
     }
 

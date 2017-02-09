@@ -44,6 +44,8 @@ public class Car {
 
     public float forwardAcceleration;
     public float forwardForce;
+    public float frontForwardForce;
+    public float rearForwardForce;
     public float speed;
     public float radialForce;
     public float turningRadius;
@@ -93,20 +95,20 @@ public class Car {
 
         // calculate maximum force the axles can put on the current ground
         float weightInNewton = Physics.calcWeight(mass);
-        maxFrontAxleForce = currentGround.getStaticFriction() * weightInNewton;
-        maxRearAxleForce = currentGround.getStaticFriction() * weightInNewton;
+        maxFrontAxleForce = currentGround.getStaticFriction() * weightInNewton / 2f;
+        maxRearAxleForce = currentGround.getStaticFriction() * weightInNewton / 2f;
 
         // apply weight shift modifier
-
+        /*
         weightShiftModifier = (-throttleInput + brakeInput) / 2;
         float temp = maxFrontAxleForce * weightShiftModifier;
         maxFrontAxleForce += temp;
         maxRearAxleForce -= temp;
-
+        */
 
         // use input to adjust steering and calculate force acceleration and speed in longitudinal direction
         steeringAngle = maxSteeringAngle * steeringInput;
-        forwardForce = maxEngineForce * throttleInput;
+        forwardForce = 0;
 
         // calculate turning radius and radial force
         turningRadius = Physics.calcTurningRadius(wheelBase, steeringAngle);
@@ -117,50 +119,50 @@ public class Car {
         boolean rearBlocking = false;
         float rollFrictionForce = currentGround.getRollingFriction() * weightInNewton;
         float slideFrictionForce = currentGround.getSlidingFriction() * weightInNewton;
-        float frontForwardForce;
-        float rearForwardForce;
 
         // CALC FRONT AXLE FORWARD FORCE
+        frontForwardForce = (maxEngineForce * throttleInput) / 2f;
+        float tempForce = 0;
         if(breaking)
         {
-            frontForwardForce = -(maxBrakeForce * brakeInput) / 2f;
-            if(frontForwardForce < -maxFrontAxleForce)
+            tempForce = (maxBrakeForce * brakeInput) /2;
+            if(tempForce > maxFrontAxleForce)
             {
                 frontBlocking = true;
-                System.out.println("FRONT BLOCKING");
-                frontForwardForce = -slideFrictionForce / 2f;
-            }
-            else
-            {
-                frontForwardForce = -rollFrictionForce / 2f;
+                System.out.println("FRONT BLOCKING: " + tempForce);
+                tempForce = slideFrictionForce / 2;
+                System.out.println("FRONT SLIDING: " + tempForce);
             }
         }
         else
         {
-            frontForwardForce = -rollFrictionForce / 2f;
+            tempForce = rollFrictionForce / 2;
+            System.out.println("FRONT ROLLING: " + tempForce);
         }
+        frontForwardForce -= tempForce;
 
         // CALC REAR AXLE FORWARD FORCE
+        rearForwardForce = (maxEngineForce * throttleInput) / 2f;
+
         if(breaking)
         {
-            rearForwardForce = -(maxBrakeForce * brakeInput) / 2f;
-            if(rearForwardForce < -maxRearAxleForce)
+            tempForce = (maxBrakeForce * brakeInput) /2;
+            if(tempForce > maxRearAxleForce)
             {
                 rearBlocking = true;
-                System.out.println("REAR BLOCKING");
-                rearForwardForce = -slideFrictionForce / 2f;
-            }
-            else
-            {
-                frontForwardForce = -rollFrictionForce / 2f;
+                System.out.println("REAR BLOCKING: " + tempForce);
+                tempForce = slideFrictionForce / 2;
+                System.out.println("REAR SLIDING: " + tempForce);
             }
         }
         else
         {
-            rearForwardForce = -rollFrictionForce / 2f;
+            tempForce = rollFrictionForce / 2;
+            System.out.println("REAR ROLLING: " + tempForce);
         }
+        rearForwardForce -= tempForce;
 
-        forwardForce += (frontForwardForce + rearForwardForce);
+        forwardForce += frontForwardForce + rearForwardForce;
 
         combinedForces = new Vector2f(forwardForce, -radialForce);
 
@@ -187,9 +189,9 @@ public class Car {
         rearWheelsLeft = new Vector3f(new Vector3f(carUp).cross(new Vector3f(rearWheelsForward)));
 
         frontWheelsPosition = new Vector3f(position).add(new Vector3f(rearWheelsForward).mul(halfWheelBase));
-        if(combinedForces.length() > maxFrontAxleForce)
+        if(frontBlocking)
         {
-            frontWheelsPosition.add(new Vector3f(frontWheelsForward).mul(speed * interval));
+            frontWheelsPosition.add(new Vector3f(rearWheelsForward).mul(speed * interval));
         }
         else
         {
@@ -197,7 +199,7 @@ public class Car {
         }
 
         rearWheelsPosition = new Vector3f(position).add(new Vector3f(rearWheelsForward).mul(-halfWheelBase));
-        if(combinedForces.length() > maxRearAxleForce)
+        if(rearBlocking)
         {
             rearWheelsPosition.add(new Vector3f(rearWheelsForward).mul(speed * interval));
         }
@@ -205,7 +207,6 @@ public class Car {
         {
             rearWheelsPosition.add(new Vector3f(rearWheelsForward).mul(speed * interval));
         }
-
 
         Vector3f tempV = new Vector3f(frontWheelsPosition).add(rearWheelsPosition);
         tempV.div(2f);
@@ -269,8 +270,7 @@ public class Car {
         else if(temp > 10 && temp <= 30) {result = GroundTypes.SAND_SOFT; }
         else {result = GroundTypes.SNOW; }
 
-        return GroundTypes.ROAD;
+        return result;
     }
-
 
 }

@@ -53,7 +53,6 @@ public class Game implements IGameLogic {
     private GameEntity rearLeftMesh;
     private GameEntity rearRightMesh;
     private GameEntity[] smokeEntities;
-    private Particle[] smokeParticles;
 
     private PROTO_Rigidbody testCube;
     private GameEntity testCubeMesh_1;
@@ -135,15 +134,14 @@ public class Game implements IGameLogic {
         rearRightMesh = new GameEntity(mesh);
 
         smokeEntities = new GameEntity[100];
-        smokeParticles = new Particle[smokeEntities.length];
         mesh = DebugMeshes.buildQuad();
-        mesh.setMaterial(Materials.WHITE);
-        Random random = new Random();
+        mesh.setMaterial(Materials.DARK_GREY);
+
         for(int i = 0; i < smokeEntities.length; i++)
         {
-            smokeParticles[i] = new Particle(random.nextInt(250), random.nextFloat(), random.nextFloat() * 0.5f, random.nextFloat() * 0.005f, random.nextFloat() * 0.001f);
             smokeEntities[i] = new GameEntity(mesh);
-            smokeEntities[i].getPosition().y = 2f;
+            smokeEntities[i].setScale(0.5f, 1f, 0.5f);
+            smokeEntities[i].getPosition().y = -1f;
         }
 
         // add objects to List of GameItems
@@ -310,26 +308,30 @@ public class Game implements IGameLogic {
         float wheelRadius = car.wheelRadius;
         float wheelDiameter = wheelRadius * 2;
 
-        for(int i = 0; i < smokeParticles.length; i++)
-        {
-            Particle particle = smokeParticles[i];
-            particle.update();
+        int index = counter %= smokeEntities.length;
+        smokeEntities[index].setPosition(wheelPositions[0]);
+        smokeEntities[index].getPosition().y = 0.05f;
+        smokeEntities[index].setRotation(car.rotation);
 
-            if(smokeParticles[i].isActive)
-            {
-                smokeEntities[i].getPosition().y += particle.riseSpeed;
-                smokeEntities[i].setRotation(0, particle.rotation, 0);
-                smokeEntities[i].setScale(particle.size);
-            }
-            else
-            {
-                particle.isActive = true;
-                smokeEntities[i].setPosition(wheelPositions[counter%4]);
-                smokeEntities[i].getPosition().y = 0.001f;
-            }
-        }
         counter++;
-        counter%= smokeEntities.length;
+        index = counter %= smokeEntities.length;
+        smokeEntities[index].setPosition(wheelPositions[1]);
+        smokeEntities[index].getPosition().y = 0.05f;
+        smokeEntities[index].setRotation(car.rotation);
+
+        counter++;
+        index = counter %= smokeEntities.length;
+        smokeEntities[index].setPosition(wheelPositions[2]);
+        smokeEntities[index].getPosition().y = 0.05f;
+        smokeEntities[index].setRotation(car.rotation);
+
+        counter++;
+        index = counter %= smokeEntities.length;
+        smokeEntities[index].setPosition(wheelPositions[3]);
+        smokeEntities[index].getPosition().y = 0.05f;
+        smokeEntities[index].setRotation(car.rotation);
+
+        counter++;
 
         carMesh.setPosition(carPosition);
         carMesh.setRotation(carRotation);
@@ -367,7 +369,7 @@ public class Game implements IGameLogic {
             debugArrowRadius.setRotation(0, carRotation.y + 90, 0);
             debugArrowRadius.setScale(car.turningRadius, 1, 1);
 
-            hud.updateDebugHUD(car.combinedForces, car.maxFrontAxleForce, car.maxRearAxleForce);
+            hud.updateDebugHUD(car.frontForwardForce, car.rearForwardForce, car.maxFrontAxleForce, car.maxRearAxleForce);
         }
     }
 

@@ -14,7 +14,6 @@ public class GroundType {
         this.rollingFriction = rollingFriction;
         this.slidingFriction = slidingFriction;
         this.staticFriction = staticFriction;
-
     }
 
     public String getType()
