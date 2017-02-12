@@ -19,6 +19,8 @@ public class Car {
     private final float maxBrakeForce;
     public final float wheelRadius;
     private final float suspensionHeight;
+    public final float airResistance_Cw;
+    public final float airResistance_k;
 
     public float steeringAngle;
     private float carDirectionAngle;
@@ -42,6 +44,9 @@ public class Car {
     public float maxRearAxleForce;
     public float weightShiftModifier;
 
+    public boolean frontBlocking;
+    public boolean rearBlocking;
+
     public float forwardAcceleration;
     public float forwardForce;
     public float frontForwardForce;
@@ -61,9 +66,10 @@ public class Car {
         suspensionHeight = 0.1f;
         mass = 2000;
         weightShiftModifier = 0.0f;
-        maxEngineForce = 12000;
+        maxEngineForce = 8000;
         maxBrakeForce = 24000;
-
+        airResistance_Cw = 0.39f;
+        airResistance_k = Physics.calcAirResistanceConstant(airResistance_Cw, 2.1f);
         position = new Vector3f();
         frontWheelsForward = new Vector3f();
         frontWheelsLeft = new Vector3f();
@@ -114,51 +120,45 @@ public class Car {
         turningRadius = Physics.calcTurningRadius(wheelBase, steeringAngle);
         radialForce = Physics.calcRadialForce(mass, speed, turningRadius);
 
+
         boolean breaking = brakeInput > 0 ? true : false;
-        boolean frontBlocking = false;
-        boolean rearBlocking = false;
+        frontBlocking = false;
+        rearBlocking = false;
         float rollFrictionForce = currentGround.getRollingFriction() * weightInNewton;
         float slideFrictionForce = currentGround.getSlidingFriction() * weightInNewton;
 
         // CALC FRONT AXLE FORWARD FORCE
         frontForwardForce = (maxEngineForce * throttleInput) / 2f;
-        float tempForce = 0;
+        float tempForce;
         if(breaking)
         {
             tempForce = (maxBrakeForce * brakeInput) /2;
             if(tempForce > maxFrontAxleForce)
             {
                 frontBlocking = true;
-                System.out.println("FRONT BLOCKING: " + tempForce);
                 tempForce = slideFrictionForce / 2;
-                System.out.println("FRONT SLIDING: " + tempForce);
             }
         }
         else
         {
             tempForce = rollFrictionForce / 2;
-            System.out.println("FRONT ROLLING: " + tempForce);
         }
         frontForwardForce -= tempForce;
 
         // CALC REAR AXLE FORWARD FORCE
         rearForwardForce = (maxEngineForce * throttleInput) / 2f;
-
         if(breaking)
         {
             tempForce = (maxBrakeForce * brakeInput) /2;
             if(tempForce > maxRearAxleForce)
             {
                 rearBlocking = true;
-                System.out.println("REAR BLOCKING: " + tempForce);
                 tempForce = slideFrictionForce / 2;
-                System.out.println("REAR SLIDING: " + tempForce);
             }
         }
         else
         {
             tempForce = rollFrictionForce / 2;
-            System.out.println("REAR ROLLING: " + tempForce);
         }
         rearForwardForce -= tempForce;
 

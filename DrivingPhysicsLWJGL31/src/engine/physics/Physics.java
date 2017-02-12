@@ -35,7 +35,15 @@ public class Physics
         return mass * G;
     }
 
+    public static float calcAirResistanceConstant(float cw, float a)
+    {
+        return 0.5f * cw * a;
+    }
 
+    public static float calcAirResistanceForce(float k, float v)
+    {
+        return k * (v * v);
+    }
 
     public static float convertMPStoKMH(float metersPerSecond)
     {

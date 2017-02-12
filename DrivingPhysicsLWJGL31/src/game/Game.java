@@ -133,7 +133,7 @@ public class Game implements IGameLogic {
         rearLeftMesh = new GameEntity(mesh);
         rearRightMesh = new GameEntity(mesh);
 
-        smokeEntities = new GameEntity[100];
+        smokeEntities = new GameEntity[1000];
         mesh = DebugMeshes.buildQuad();
         mesh.setMaterial(Materials.DARK_GREY);
 
@@ -307,31 +307,37 @@ public class Game implements IGameLogic {
         float rearWheelRotation = car.rearWheelSpinAngle;
         float wheelRadius = car.wheelRadius;
         float wheelDiameter = wheelRadius * 2;
+        
+        if(car.frontBlocking)
+        {
+            int index = counter %= smokeEntities.length;
+            smokeEntities[index].setPosition(wheelPositions[0]);
+            smokeEntities[index].getPosition().y = 0.05f;
+            smokeEntities[index].setRotation(car.rotation);
 
-        int index = counter %= smokeEntities.length;
-        smokeEntities[index].setPosition(wheelPositions[0]);
-        smokeEntities[index].getPosition().y = 0.05f;
-        smokeEntities[index].setRotation(car.rotation);
+            counter++;
+            index = counter %= smokeEntities.length;
+            smokeEntities[index].setPosition(wheelPositions[1]);
+            smokeEntities[index].getPosition().y = 0.05f;
+            smokeEntities[index].setRotation(car.rotation);
+        }
 
-        counter++;
-        index = counter %= smokeEntities.length;
-        smokeEntities[index].setPosition(wheelPositions[1]);
-        smokeEntities[index].getPosition().y = 0.05f;
-        smokeEntities[index].setRotation(car.rotation);
+        if(car.rearBlocking)
+        {
+            counter++;
+            int index = counter %= smokeEntities.length;
+            smokeEntities[index].setPosition(wheelPositions[2]);
+            smokeEntities[index].getPosition().y = 0.05f;
+            smokeEntities[index].setRotation(car.rotation);
 
-        counter++;
-        index = counter %= smokeEntities.length;
-        smokeEntities[index].setPosition(wheelPositions[2]);
-        smokeEntities[index].getPosition().y = 0.05f;
-        smokeEntities[index].setRotation(car.rotation);
+            counter++;
+            index = counter %= smokeEntities.length;
+            smokeEntities[index].setPosition(wheelPositions[3]);
+            smokeEntities[index].getPosition().y = 0.05f;
+            smokeEntities[index].setRotation(car.rotation);
 
-        counter++;
-        index = counter %= smokeEntities.length;
-        smokeEntities[index].setPosition(wheelPositions[3]);
-        smokeEntities[index].getPosition().y = 0.05f;
-        smokeEntities[index].setRotation(car.rotation);
-
-        counter++;
+            counter++;
+        }
 
         carMesh.setPosition(carPosition);
         carMesh.setRotation(carRotation);
