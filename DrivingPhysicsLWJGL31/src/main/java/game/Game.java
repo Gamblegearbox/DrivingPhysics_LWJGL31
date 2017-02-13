@@ -8,7 +8,6 @@ import engine.gameEntities.GameEntity;
 import engine.mesh.Mesh;
 import engine.interfaces.IGameLogic;
 import engine.physics.PROTO_Rigidbody;
-import engine.physics.Particle;
 import engine.scene.Scene;
 import engine.shading.Material;
 import engine.texture.Texture;
@@ -24,7 +23,6 @@ import org.joml.Vector2f;
 import org.joml.Vector3f;
 
 import java.util.ArrayList;
-import java.util.Random;
 
 import static org.lwjgl.glfw.GLFW.*;
 
@@ -94,8 +92,8 @@ public class Game implements IGameLogic {
         setupGameItems();
         setupLight();
 
-        camera.setPosition(0, 5, 20);
-        camera.setRotation(0,0,0);
+        camera.setPosition(0, 35, 35);
+        camera.setRotation(45,0,0);
         setupHUD();
 
         if(EngineOptions.DEBUG)
@@ -135,7 +133,7 @@ public class Game implements IGameLogic {
 
         smokeEntities = new GameEntity[1000];
         mesh = DebugMeshes.buildQuad();
-        mesh.setMaterial(Materials.DARK_GREY);
+        mesh.setMaterial(Materials.WHITE);
 
         for(int i = 0; i < smokeEntities.length; i++)
         {
@@ -157,7 +155,6 @@ public class Game implements IGameLogic {
         {
             gameEntities.add(smokeEntities[i]);
         }
-
 
         // create debug objects
         if(EngineOptions.DEBUG)
@@ -308,7 +305,7 @@ public class Game implements IGameLogic {
         float wheelRadius = car.wheelRadius;
         float wheelDiameter = wheelRadius * 2;
         
-        if(car.frontBlocking)
+        if(car.isFrontBlocking || car.isFrontSliding)
         {
             int index = counter %= smokeEntities.length;
             smokeEntities[index].setPosition(wheelPositions[0]);
@@ -322,7 +319,7 @@ public class Game implements IGameLogic {
             smokeEntities[index].setRotation(car.rotation);
         }
 
-        if(car.rearBlocking)
+        if(car.isRearBlocking || car.isRearSliding)
         {
             counter++;
             int index = counter %= smokeEntities.length;
@@ -375,7 +372,7 @@ public class Game implements IGameLogic {
             debugArrowRadius.setRotation(0, carRotation.y + 90, 0);
             debugArrowRadius.setScale(car.turningRadius, 1, 1);
 
-            hud.updateDebugHUD(car.frontForwardForce, car.rearForwardForce, car.maxFrontAxleForce, car.maxRearAxleForce);
+            hud.updateDebugHUD(car.frontCombinedForces, car.rearCombinedForces, car.maxFrontAxleForce, car.maxRearAxleForce);
         }
     }
 
@@ -386,6 +383,11 @@ public class Game implements IGameLogic {
             Vector2f rotVec = mouseInput.getDisplVec();
             camera.moveRotation(rotVec.x * MOUSE_SENSITIVITY, rotVec.y * MOUSE_SENSITIVITY, 0);
         }
+
+        float lerp = 1.5f;
+        Vector3f position = camera.getPosition();
+        position.x += (car.position.x - position.x) * lerp * interval;
+        position.z += (car.position.z + 35 - position.z) * lerp * interval;
         camera.movePosition(cameraIncrement.x * interval, cameraIncrement.y * interval, cameraIncrement.z * interval);
     }
 

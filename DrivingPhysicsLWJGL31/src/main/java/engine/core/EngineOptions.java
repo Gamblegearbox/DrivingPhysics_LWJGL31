@@ -21,8 +21,6 @@ public class EngineOptions {
 
     public static boolean SHOW_TRIANGLES = false;
     public static boolean CULLFACE = true;
-    public static boolean COMPATIBLE_PROFILE = true;
-
 
     public static void printInfo()
     {
@@ -57,7 +55,6 @@ public class EngineOptions {
         System.out.println("VSYNC:              " + convertBooleanToEnabledOrDisabled(V_SYNC));
         System.out.println("WIREFRAME MODE:     " + convertBooleanToEnabledOrDisabled(SHOW_TRIANGLES));
         System.out.println("CULLFACE:           " + convertBooleanToEnabledOrDisabled(CULLFACE));
-        System.out.println("COMPATIBLEPROFILE:  " + convertBooleanToEnabledOrDisabled(COMPATIBLE_PROFILE));
         System.out.println();
     }
 
