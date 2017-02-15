@@ -19,8 +19,7 @@ public class Car {
     private final float maxBrakeForce;
     public final float wheelRadius;
     private final float suspensionHeight;
-    //public final float airResistance_Cw;
-    //public final float airResistance_k;
+    private final float maxSpeedInMps;
 
     public float steeringAngle;
     private float carDirectionAngle;
@@ -40,7 +39,6 @@ public class Car {
     public Vector3f[] wheelPositions;
     public Vector2f frontCombinedForces;
     public Vector2f rearCombinedForces;
-
 
     private GroundType currentGround;
     public float maxFrontAxleForce;
@@ -63,6 +61,10 @@ public class Car {
     public Car()
     {
         maxSteeringAngle = 20f;
+        maxEngineForce = 12000;
+        maxBrakeForce = 24000;
+        maxSpeedInMps = 50f;
+
         wheelBase = 3.15f;
         halfWheelBase = wheelBase / 2f;
         halfTrackWidth = 0.83f;
@@ -71,10 +73,6 @@ public class Car {
         suspensionHeight = 0.1f;
         mass = 2000;
         weightShiftModifier = 0.0f;
-        maxEngineForce = 12000;
-        maxBrakeForce = 24000;
-        //airResistance_Cw = 0.39f;
-        //airResistance_k = Physics.calcAirResistanceConstant(airResistance_Cw, 2.1f);
         position = new Vector3f();
         oldForward = new Vector3f();
         frontWheelsForward = new Vector3f();
@@ -178,6 +176,10 @@ public class Car {
         if(speed < 0 )
         {
             speed = 0;
+        }
+        if(speed > maxSpeedInMps)
+        {
+            speed = maxSpeedInMps;
         }
 
         // calculate rotation in radians for upcoming rearWheelsForward vector calculation
