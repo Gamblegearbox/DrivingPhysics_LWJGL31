@@ -34,6 +34,7 @@ public class Car {
     public Vector3f frontWheelsLeft;
     public Vector3f rearWheelsForward;
     public Vector3f rearWheelsLeft;
+    public Vector3f slideDirection;
     private Vector3f carUp;
     public Vector3f rotation;
     public Vector3f[] wheelPositions;
@@ -124,7 +125,6 @@ public class Car {
         // calculate turning radius and radial force
         turningRadius = Physics.calcTurningRadius(wheelBase, steeringAngle);
         radialForce = Physics.calcRadialForce(mass, speed, turningRadius);
-
         boolean breaking = isBrakeInput > 0 ? true : false;
         isFrontBlocking = false;
         isRearBlocking = false;
@@ -132,42 +132,42 @@ public class Car {
         float slideFrictionForce = currentGround.getSlidingFriction() * weightInNewton;
 
         // CALC FRONT AXLE FORWARD FORCE
-        frontForwardForce = (maxEngineForce * throttleInput) / 2f;
+        frontForwardForce = (maxEngineForce * throttleInput) * 0.5f;
         float tempForce;
         if(breaking)
         {
-            tempForce = (maxBrakeForce * isBrakeInput) /2f;
+            tempForce = (maxBrakeForce * isBrakeInput) * 0.5f;
             if(tempForce > maxFrontAxleForce)
             {
                 isFrontBlocking = true;
-                tempForce = slideFrictionForce / 2f;
+                tempForce = slideFrictionForce * 0.5f;
             }
         }
         else
         {
-            tempForce = rollFrictionForce / 2f;
+            tempForce = rollFrictionForce * 0.5f;
         }
         frontForwardForce -= tempForce;
 
         // CALC REAR AXLE FORWARD FORCE
-        rearForwardForce = (maxEngineForce * throttleInput) / 2f;
+        rearForwardForce = (maxEngineForce * throttleInput) * 0.5f;
         if(breaking)
         {
-            tempForce = (maxBrakeForce * isBrakeInput) / 2f;
+            tempForce = (maxBrakeForce * isBrakeInput) * 0.5f;
             if(tempForce > maxRearAxleForce)
             {
                 isRearBlocking = true;
-                tempForce = slideFrictionForce / 2f;
+                tempForce = slideFrictionForce * 0.5f;
             }
         }
         else
         {
-            tempForce = rollFrictionForce / 2f;
+            tempForce = rollFrictionForce * 0.5f;
         }
         rearForwardForce -= tempForce;
 
-        frontCombinedForces = new Vector2f(frontForwardForce, radialForce / 2f);
-        rearCombinedForces = new Vector2f(rearForwardForce, radialForce / 2f);
+        frontCombinedForces = new Vector2f(frontForwardForce, radialForce * 0.5f);
+        rearCombinedForces = new Vector2f(rearForwardForce, radialForce * 0.5f);
         forwardForce = frontForwardForce + rearForwardForce;
 
         forwardAcceleration = Physics.calcAcceleration(mass, forwardForce);
@@ -200,12 +200,60 @@ public class Car {
         isRearSliding = rearCombinedForces.length() > maxRearAxleForce ? true : false;
 
         frontWheelsPosition = new Vector3f(position).add(new Vector3f(rearWheelsForward).mul(halfWheelBase));
+        if(isFrontBlocking || isFrontSliding)
+        {
+            if(slideDirection == null)
+            {
+                if(steeringInput < 0)
+                {
+                    slideDirection = new Vector3f(rearWheelsForward).sub(rearWheelsLeft);
+                }
+                else
+                {
+                    slideDirection = new Vector3f(rearWheelsForward).add(rearWheelsLeft);
+                }
+                slideDirection.normalize();
+            }
+            frontWheelsPosition.add(new Vector3f(slideDirection).mul(speed * interval));
+
+        }
+        else
+        {
+            slideDirection = null;
+            frontWheelsPosition.add(new Vector3f(frontWheelsForward).mul(speed * interval));
+        }
+
+        if(isRearBlocking || isRearSliding)
+        {
+            if(slideDirection == null)
+            {
+                if(steeringInput < 0)
+                {
+                    slideDirection = new Vector3f(rearWheelsForward).sub(rearWheelsLeft);
+                }
+                else
+                {
+                    slideDirection = new Vector3f(rearWheelsForward).add(rearWheelsLeft);
+                }
+                slideDirection.normalize();
+            }
+            rearWheelsPosition.add(new Vector3f(slideDirection).mul(speed * interval));
+
+        }
+        else
+        {
+            slideDirection = null;
+            frontWheelsPosition.add(new Vector3f(frontWheelsForward).mul(speed * interval));
+        }
+
+        /*
         if(isFrontBlocking)
         {
             frontWheelsPosition.add(new Vector3f(rearWheelsForward).mul(speed * interval));
         }
         else if(isFrontSliding)
         {
+
             if(frontSlipCounter > 1)
             {
                 frontSlipCounter = 0;
@@ -220,7 +268,7 @@ public class Car {
         else
         {
             frontWheelsPosition.add(new Vector3f(frontWheelsForward).mul(speed * interval));
-        }
+        }*/
 
         rearWheelsPosition = new Vector3f(position).add(new Vector3f(rearWheelsForward).mul(-halfWheelBase));
         rearWheelsPosition.add(new Vector3f(rearWheelsForward).mul(speed * interval));
