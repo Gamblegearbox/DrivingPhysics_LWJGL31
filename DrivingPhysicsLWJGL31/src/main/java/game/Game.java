@@ -18,6 +18,7 @@ import engine.physics.Physics;
 import game.car.Car;
 import engine.light.DirectionalLight;
 import engine.scene.SceneLight;
+import game.car.CarV2;
 import org.joml.Math;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
@@ -37,20 +38,26 @@ public class Game implements IGameLogic {
     private static final float CAMERA_SPEED = 5f;
     private static final float CAMERA_SPEED_FAST = 10f;
 
+
     private final Renderer renderer;
     private final Camera camera;
     private final Vector3f cameraIncrement;
+    private boolean isFollowCam = false;
 
     private Texture texture;
 
+    private CarV2 carV2;
+    private GameEntity carV2_Mesh;
+
     private Car car;
-    private GameEntity carMesh;
-    private GameEntity axleMesh;
-    private GameEntity frontLeftMesh;
-    private GameEntity frontRightMesh;
-    private GameEntity rearLeftMesh;
-    private GameEntity rearRightMesh;
-    private GameEntity[] smokeEntities;
+    private GameEntity car_Mesh;
+    private GameEntity axle_Mesh;
+    private GameEntity frontLeft_Mesh;
+    private GameEntity frontRight_Mesh;
+    private GameEntity rearLeft_Mesh;
+    private GameEntity rearRight_Mesh;
+    private GameEntity[] skidMeshes;
+
 
     private PROTO_Rigidbody testCube;
     private GameEntity testCubeMesh_1;
@@ -64,7 +71,7 @@ public class Game implements IGameLogic {
     private float brakeInput = 0;
     private float steeringInput = 0;
     private float handbrakeInput = 0;
-    private int gear = 0;
+    private int gear = 1;
     private boolean isNight = false;
 
     //DEBUG VALUES
@@ -88,11 +95,12 @@ public class Game implements IGameLogic {
         renderer.init();
         scene = new Scene();
         car = new Car();
+        carV2 = new CarV2();
 
         setupGameItems();
         setupLight();
 
-        camera.setPosition(0, 35, 35);
+        camera.setPosition(0, 25, 35);
         camera.setRotation(45,0,0);
         setupHUD();
 
@@ -118,42 +126,50 @@ public class Game implements IGameLogic {
         // create car, axles and wheels
         mesh = OBJLoader.loadMesh("/models/Car_Offroad.obj");
         mesh.setMaterial(material);
-        carMesh = new GameEntity(mesh);
+        car_Mesh = new GameEntity(mesh);
 
         mesh = OBJLoader.loadMesh("/models/Car_Offroad_Axles.obj");
         mesh.setMaterial(material);
-        axleMesh = new GameEntity(mesh);
+        axle_Mesh = new GameEntity(mesh);
 
         mesh = OBJLoader.loadMesh("/models/Wheel_Offroad.obj");
         mesh.setMaterial(material);
-        frontLeftMesh = new GameEntity(mesh);
-        frontRightMesh = new GameEntity(mesh);
-        rearLeftMesh = new GameEntity(mesh);
-        rearRightMesh = new GameEntity(mesh);
+        frontLeft_Mesh = new GameEntity(mesh);
+        frontRight_Mesh = new GameEntity(mesh);
+        rearLeft_Mesh = new GameEntity(mesh);
+        rearRight_Mesh = new GameEntity(mesh);
 
-        smokeEntities = new GameEntity[1000];
+        // create carv2 mesh
+        mesh = OBJLoader.loadMesh("/models/Car_Offroad.obj");
+        mesh.setMaterial(Materials.BLUE);
+        carV2_Mesh = new GameEntity(mesh);
+
+
+        // create effect meshes
+        skidMeshes = new GameEntity[1000];
         mesh = DebugMeshes.buildQuad();
         mesh.setMaterial(Materials.WHITE);
 
-        for(int i = 0; i < smokeEntities.length; i++)
+        for(int i = 0; i < skidMeshes.length; i++)
         {
-            smokeEntities[i] = new GameEntity(mesh);
-            smokeEntities[i].setScale(0.5f, 1f, 0.5f);
-            smokeEntities[i].getPosition().y = -1f;
+            skidMeshes[i] = new GameEntity(mesh);
+            skidMeshes[i].setScale(0.5f, 1f, 0.5f);
+            skidMeshes[i].getPosition().y = -1f;
         }
 
         // add objects to List of GameItems
         ArrayList<GameEntity> gameEntities = new ArrayList<>();
         gameEntities.add(ground);
-        gameEntities.add(carMesh);
-        gameEntities.add(axleMesh);
-        gameEntities.add(frontLeftMesh);
-        gameEntities.add(frontRightMesh);
-        gameEntities.add(rearLeftMesh);
-        gameEntities.add(rearRightMesh);
-        for(int i = 0; i < smokeEntities.length; i++)
+        gameEntities.add(car_Mesh);
+        gameEntities.add(axle_Mesh);
+        gameEntities.add(frontLeft_Mesh);
+        gameEntities.add(frontRight_Mesh);
+        gameEntities.add(rearLeft_Mesh);
+        gameEntities.add(rearRight_Mesh);
+        gameEntities.add(carV2_Mesh);
+        for(int i = 0; i < skidMeshes.length; i++)
         {
-            gameEntities.add(smokeEntities[i]);
+            gameEntities.add(skidMeshes[i]);
         }
 
         // create debug objects
@@ -176,6 +192,7 @@ public class Game implements IGameLogic {
 
         // add objects to scene
         scene.setGameItems(gameEntities);
+        car.update(0,0,0,0,0,0);  // just done to avoid crash if car is not updated in loop (calc all values one time)
     }
 
     private void setupLight()
@@ -210,8 +227,13 @@ public class Game implements IGameLogic {
         if (window.isKeyPressed(GLFW_KEY_Q)) { cameraIncrement.y = -cameraSpeed; }
         else if (window.isKeyPressed(GLFW_KEY_E)) { cameraIncrement.y = cameraSpeed; }
 
-        if(window.isKeyPressed(GLFW_KEY_1)) { directionalLightAngle += 1.0f; }
-        else if(window.isKeyPressed(GLFW_KEY_2)) { directionalLightAngle -= 1.0f;}
+        if(window.isKeyPressed(GLFW_KEY_R)) { directionalLightAngle += 1.0f; }
+        else if(window.isKeyPressed(GLFW_KEY_F)) { directionalLightAngle -= 1.0f;}
+
+        if(window.isKeyPressed(GLFW_KEY_C))
+        {
+            isFollowCam = !isFollowCam;
+        }
 
         if (window.isKeyPressed(GLFW_KEY_UP))
         {
@@ -295,7 +317,11 @@ public class Game implements IGameLogic {
         hud.updateCompass(camera.getRotation().y);
         updateDirectionalLight();
 
-        car.update(throttleInput, brakeInput, steeringInput, gear, handbrakeInput, interval);
+        //car.update(throttleInput, brakeInput, steeringInput, gear, handbrakeInput, interval);
+        carV2.update(throttleInput, brakeInput, steeringInput, handbrakeInput, interval);
+        carV2_Mesh.setPosition(carV2.position);
+        carV2_Mesh.setRotation(carV2.rotation);
+
         Vector3f carPosition = car.position;
         Vector3f carRotation = car.rotation;
         Vector3f[] wheelPositions = car.wheelPositions;
@@ -307,58 +333,58 @@ public class Game implements IGameLogic {
         
         if(car.isFrontBlocking || car.isFrontSliding)
         {
-            int index = counter %= smokeEntities.length;
-            smokeEntities[index].setPosition(wheelPositions[0]);
-            smokeEntities[index].getPosition().y = 0.05f;
-            smokeEntities[index].setRotation(car.rotation);
+            int index = counter %= skidMeshes.length;
+            skidMeshes[index].setPosition(wheelPositions[0]);
+            skidMeshes[index].getPosition().y = 0.05f;
+            skidMeshes[index].setRotation(car.rotation);
 
             counter++;
-            index = counter %= smokeEntities.length;
-            smokeEntities[index].setPosition(wheelPositions[1]);
-            smokeEntities[index].getPosition().y = 0.05f;
-            smokeEntities[index].setRotation(car.rotation);
+            index = counter %= skidMeshes.length;
+            skidMeshes[index].setPosition(wheelPositions[1]);
+            skidMeshes[index].getPosition().y = 0.05f;
+            skidMeshes[index].setRotation(car.rotation);
         }
 
         if(car.isRearBlocking || car.isRearSliding)
         {
             counter++;
-            int index = counter %= smokeEntities.length;
-            smokeEntities[index].setPosition(wheelPositions[2]);
-            smokeEntities[index].getPosition().y = 0.05f;
-            smokeEntities[index].setRotation(car.rotation);
+            int index = counter %= skidMeshes.length;
+            skidMeshes[index].setPosition(wheelPositions[2]);
+            skidMeshes[index].getPosition().y = 0.05f;
+            skidMeshes[index].setRotation(car.rotation);
 
             counter++;
-            index = counter %= smokeEntities.length;
-            smokeEntities[index].setPosition(wheelPositions[3]);
-            smokeEntities[index].getPosition().y = 0.05f;
-            smokeEntities[index].setRotation(car.rotation);
+            index = counter %= skidMeshes.length;
+            skidMeshes[index].setPosition(wheelPositions[3]);
+            skidMeshes[index].getPosition().y = 0.05f;
+            skidMeshes[index].setRotation(car.rotation);
 
             counter++;
         }
 
-        carMesh.setPosition(carPosition);
-        carMesh.setRotation(carRotation);
-        axleMesh.setPosition(carPosition);
-        axleMesh.getPosition().y = wheelRadius;
-        axleMesh.setRotation(0, carRotation.y, 0);
+        car_Mesh.setPosition(carPosition);
+        car_Mesh.setRotation(carRotation);
+        axle_Mesh.setPosition(carPosition);
+        axle_Mesh.getPosition().y = wheelRadius;
+        axle_Mesh.setRotation(0, carRotation.y, 0);
 
-        frontLeftMesh.setPosition(wheelPositions[1]);
-        frontLeftMesh.setRotation(0, carRotation.y + steeringAngle, frontWheelRotation);
-        frontLeftMesh.setScale(wheelDiameter);
+        frontLeft_Mesh.setPosition(wheelPositions[1]);
+        frontLeft_Mesh.setRotation(0, carRotation.y + steeringAngle, frontWheelRotation);
+        frontLeft_Mesh.setScale(wheelDiameter);
 
-        frontRightMesh.setPosition(wheelPositions[0]);
-        frontRightMesh.setRotation(0, carRotation.y + 180 + steeringAngle, -frontWheelRotation);
-        frontRightMesh.setScale(wheelDiameter);
+        frontRight_Mesh.setPosition(wheelPositions[0]);
+        frontRight_Mesh.setRotation(0, carRotation.y + 180 + steeringAngle, -frontWheelRotation);
+        frontRight_Mesh.setScale(wheelDiameter);
 
-        rearLeftMesh.setPosition(wheelPositions[3]);
-        rearLeftMesh.setRotation(0, carRotation.y, rearWheelRotation);
-        rearLeftMesh.setScale(wheelDiameter);
+        rearLeft_Mesh.setPosition(wheelPositions[3]);
+        rearLeft_Mesh.setRotation(0, carRotation.y, rearWheelRotation);
+        rearLeft_Mesh.setScale(wheelDiameter);
 
-        rearRightMesh.setPosition(wheelPositions[2]);
-        rearRightMesh.setRotation(0, carRotation.y + 180, -rearWheelRotation);
-        rearRightMesh.setScale(wheelDiameter);
+        rearRight_Mesh.setPosition(wheelPositions[2]);
+        rearRight_Mesh.setRotation(0, carRotation.y + 180, -rearWheelRotation);
+        rearRight_Mesh.setScale(wheelDiameter);
 
-        hud.setStatusText("Speed: " + Physics.convertMPStoKMH(car.speed) + "KM/H");
+        hud.setStatusText("Speed: " + Physics.convertMPStoKMH(carV2.speed) + "KM/H");
 
         if(EngineOptions.DEBUG)
         {
@@ -384,10 +410,13 @@ public class Game implements IGameLogic {
             camera.moveRotation(rotVec.x * MOUSE_SENSITIVITY, rotVec.y * MOUSE_SENSITIVITY, 0);
         }
 
-        float lerp = 1.5f;
-        Vector3f position = camera.getPosition();
-        position.x += (car.position.x - position.x) * lerp * interval;
-        position.z += (car.position.z + 35 - position.z) * lerp * interval;
+        if(isFollowCam)
+        {
+            float lerp = 1.5f;
+            Vector3f position = camera.getPosition();
+            position.x += (carV2.position.x - position.x) * lerp * interval;
+            position.z += (carV2.position.z + 25 - position.z) * lerp * interval;
+        }
         camera.movePosition(cameraIncrement.x * interval, cameraIncrement.y * interval, cameraIncrement.z * interval);
     }
 
