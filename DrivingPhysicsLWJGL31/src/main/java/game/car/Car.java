@@ -73,6 +73,8 @@ public class Car {
         weightShiftModifier = 0.0f;
         maxEngineForce = 12000;
         maxBrakeForce = 24000;
+        //airResistance_Cw = 0.39f;
+        //airResistance_k = Physics.calcAirResistanceConstant(airResistance_Cw, 2.1f);
         position = new Vector3f();
         oldForward = new Vector3f();
         frontWheelsForward = new Vector3f();
@@ -178,11 +180,11 @@ public class Car {
             speed = 0;
         }
 
-        // calculate rotation in radians for upcoming Wheel forward vector calculation
+        // calculate rotation in radians for upcoming rearWheelsForward vector calculation
         float degToRad = (float)Math.toRadians(carDirectionAngle);
         float degToRadInclSteering = (float)Math.toRadians(carDirectionAngle - steeringAngle);
 
-        // calculate frontWheelsForward and frontWheelsLeft direction of the steered wheel
+        // calculate rearWheelsForward and rearWheelsLeft direction of the steered wheel
         frontWheelsForward.x = (float) Math.cos(degToRadInclSteering);
         frontWheelsForward.z = (float) Math.sin(degToRadInclSteering);
         frontWheelsLeft = new Vector3f(new Vector3f(carUp).cross(new Vector3f(frontWheelsForward)));
