@@ -18,12 +18,12 @@
     <orderEntry type="library" name="Maven: org.lwjgl:lwjgl-openal:3.1.1" level="project" />
     <orderEntry type="library" name="Maven: org.lwjgl:lwjgl-opengl:3.1.1" level="project" />
     <orderEntry type="library" name="Maven: org.lwjgl:lwjgl-stb:3.1.1" level="project" />
-    <orderEntry type="library" scope="RUNTIME" name="Maven: org.lwjgl:lwjgl:natives-windows:3.1.1" level="project" />
-    <orderEntry type="library" scope="RUNTIME" name="Maven: org.lwjgl:lwjgl-glfw:natives-windows:3.1.1" level="project" />
-    <orderEntry type="library" scope="RUNTIME" name="Maven: org.lwjgl:lwjgl-jemalloc:natives-windows:3.1.1" level="project" />
-    <orderEntry type="library" scope="RUNTIME" name="Maven: org.lwjgl:lwjgl-openal:natives-windows:3.1.1" level="project" />
-    <orderEntry type="library" scope="RUNTIME" name="Maven: org.lwjgl:lwjgl-opengl:natives-windows:3.1.1" level="project" />
-    <orderEntry type="library" scope="RUNTIME" name="Maven: org.lwjgl:lwjgl-stb:natives-windows:3.1.1" level="project" />
+    <orderEntry type="library" scope="RUNTIME" name="Maven: org.lwjgl:lwjgl:natives-macos:3.1.1" level="project" />
+    <orderEntry type="library" scope="RUNTIME" name="Maven: org.lwjgl:lwjgl-glfw:natives-macos:3.1.1" level="project" />
+    <orderEntry type="library" scope="RUNTIME" name="Maven: org.lwjgl:lwjgl-jemalloc:natives-macos:3.1.1" level="project" />
+    <orderEntry type="library" scope="RUNTIME" name="Maven: org.lwjgl:lwjgl-openal:natives-macos:3.1.1" level="project" />
+    <orderEntry type="library" scope="RUNTIME" name="Maven: org.lwjgl:lwjgl-opengl:natives-macos:3.1.1" level="project" />
+    <orderEntry type="library" scope="RUNTIME" name="Maven: org.lwjgl:lwjgl-stb:natives-macos:3.1.1" level="project" />
     <orderEntry type="library" name="Maven: org.joml:joml:1.9.2" level="project" />
     <orderEntry type="library" name="Maven: org.l33tlabs.twl:pngdecoder:1.0" level="project" />
   </component>
