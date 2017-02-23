@@ -16,6 +16,7 @@ public class CarV2 {
     public Vector3f rotation = new Vector3f(0,0,0);
 
     private Vector2f carHeading = new Vector2f(1,0);
+    private Vector2f sliding = new Vector2f(0,0);
     private Vector2f velocity = new Vector2f(0,0);
 
     public float speed = 0;
@@ -70,16 +71,14 @@ public class CarV2 {
         float turnRadius = wheelBase / (float)Math.sin(Math.toRadians(steeringAngle));
         float angularVelo = speed / turnRadius;
         rotation.y += angularVelo;
+
         carHeading.x = (float) Math.cos(Math.toRadians(rotation.y));
         carHeading.y = (float) -Math.sin(Math.toRadians(rotation.y));
 
-        updatePosition(interval);
-    }
-
-    private void updatePosition(float interval)
-    {
         position.x = position.x + velocity.x * interval;
         position.z = position.z + velocity.y * interval;
+
+
     }
 
     private float getLateralTireForce(float slipAngle)

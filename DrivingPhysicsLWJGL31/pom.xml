@@ -14,6 +14,7 @@
         <lwjgl.version>3.1.1</lwjgl.version>
         <joml.version>1.9.2</joml.version>
     </properties>
+
     <profiles>
         <profile>
             <id>lwjgl-natives-linux></id>
@@ -24,6 +25,7 @@
                 <lwjgl.natives>natives-linux</lwjgl.natives>
             </properties>
         </profile>
+
         <profile>
             <id>lwjgl-natives-macos></id>
             <activation>
@@ -33,6 +35,7 @@
                 <lwjgl.natives>natives-macos</lwjgl.natives>
             </properties>
         </profile>
+
         <profile>
             <id>lwjgl-natives-windows></id>
             <activation>
@@ -43,6 +46,7 @@
             </properties>
         </profile>
     </profiles>
+
     <dependencies>
         <dependency>
             <groupId>org.lwjgl</groupId>
@@ -121,6 +125,7 @@
             <artifactId>joml</artifactId>
             <version>${joml.version}</version>
         </dependency>
+
         <!-- https://mvnrepository.com/artifact/org.l33tlabs.twl/pngdecoder -->
         <dependency>
             <groupId>org.l33tlabs.twl</groupId>

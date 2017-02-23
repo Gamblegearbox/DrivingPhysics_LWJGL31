@@ -36,6 +36,7 @@ public class DriveTrain {
         else if(speed < 54){ gear = 4; }
         else if(speed < 58){ gear = 5; }
         else { gear = 6; }
+
         return gear;
     }
 }

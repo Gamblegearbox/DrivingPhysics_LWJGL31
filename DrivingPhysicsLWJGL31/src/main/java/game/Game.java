@@ -5,9 +5,9 @@ import engine.core.EngineOptions;
 import engine.core.Window;
 import engine.core.Renderer;
 import engine.gameEntities.GameEntity;
+import engine.input.KeyboardInput;
 import engine.mesh.Mesh;
 import engine.interfaces.IGameLogic;
-import engine.physics.PROTO_Rigidbody;
 import engine.scene.Scene;
 import engine.shading.Material;
 import engine.texture.Texture;
@@ -29,7 +29,6 @@ import static org.lwjgl.glfw.GLFW.*;
 
 public class Game implements IGameLogic {
 
-
     private static final float MOUSE_SENSITIVITY = 0.2f;
     private static final float INPUT_PEDAL_INCREASE = 0.02f;
     private static final float INPUT_PEDAL_DECREASE = 0.06f;
@@ -37,7 +36,8 @@ public class Game implements IGameLogic {
     private static final float INPUT_MAX_VALUE = 1.0f;
     private static final float CAMERA_SPEED = 5f;
     private static final float CAMERA_SPEED_FAST = 10f;
-
+    private static final float FOLLOW_CAMERA_LERP_SPEED = 5f;
+    private static final float FOLLOW_CAMERA_DISTANCE = 15f;
 
     private final Renderer renderer;
     private final Camera camera;
@@ -45,9 +45,6 @@ public class Game implements IGameLogic {
     private boolean isFollowCam = false;
 
     private Texture texture;
-
-    private CarV2 carV2;
-    private GameEntity carV2_Mesh;
 
     private Car car;
     private GameEntity car_Mesh;
@@ -58,9 +55,7 @@ public class Game implements IGameLogic {
     private GameEntity rearRight_Mesh;
     private GameEntity[] skidMeshes;
 
-
-    private PROTO_Rigidbody testCube;
-    private GameEntity testCubeMesh_1;
+    private int skidMeshesIndexCounter = 0;
 
     private Vector3f lightDirection;
     private Scene scene;
@@ -71,15 +66,12 @@ public class Game implements IGameLogic {
     private float brakeInput = 0;
     private float steeringInput = 0;
     private float handbrakeInput = 0;
-    private int gear = 1;
     private boolean isNight = false;
 
     //DEBUG VALUES
     private int totalUpdates = 0;
     private int totalRenderCycles = 0;
     private int totalInputCalls = 0;
-
-    private GameEntity debugArrowRadius;
 
     public Game()
     {
@@ -95,12 +87,11 @@ public class Game implements IGameLogic {
         renderer.init();
         scene = new Scene();
         car = new Car();
-        carV2 = new CarV2();
 
         setupGameItems();
         setupLight();
 
-        camera.setPosition(0, 25, 35);
+        camera.setPosition(0, FOLLOW_CAMERA_DISTANCE, 35);
         camera.setRotation(45,0,0);
         setupHUD();
 
@@ -108,7 +99,6 @@ public class Game implements IGameLogic {
         {
             EngineOptions.printInfo();
         }
-
     }
 
     private void setupGameItems() throws Exception
@@ -139,12 +129,6 @@ public class Game implements IGameLogic {
         rearLeft_Mesh = new GameEntity(mesh);
         rearRight_Mesh = new GameEntity(mesh);
 
-        // create carv2 mesh
-        mesh = OBJLoader.loadMesh("/models/Car_Offroad.obj");
-        mesh.setMaterial(Materials.BLUE);
-        carV2_Mesh = new GameEntity(mesh);
-
-
         // create effect meshes
         skidMeshes = new GameEntity[1000];
         mesh = DebugMeshes.buildQuad();
@@ -166,33 +150,19 @@ public class Game implements IGameLogic {
         gameEntities.add(frontRight_Mesh);
         gameEntities.add(rearLeft_Mesh);
         gameEntities.add(rearRight_Mesh);
-        gameEntities.add(carV2_Mesh);
         for(int i = 0; i < skidMeshes.length; i++)
         {
             gameEntities.add(skidMeshes[i]);
         }
 
-        // create debug objects
         if(EngineOptions.DEBUG)
         {
-            // RIGID BODY CUBE
-            mesh = OBJLoader.loadMesh("/models/REF_ONE_CUBIC_METER.obj");
-            mesh.setMaterial(Materials.RED);
-            testCubeMesh_1 = new GameEntity(mesh);
-            testCubeMesh_1.setPosition(0, 25f, -15);
-            testCube = new PROTO_Rigidbody(testCubeMesh_1.getPosition(), 1f);
-
-            mesh = DebugMeshes.buildline();
-            mesh.setMaterial(Materials.WHITE);
-            debugArrowRadius = new GameEntity(mesh);
-
-            gameEntities.add(debugArrowRadius);
-            gameEntities.add(testCubeMesh_1);
+            // use this section to create and add gameItem for debug purposes
         }
 
         // add objects to scene
         scene.setGameItems(gameEntities);
-        car.update(0,0,0,0,0,0);  // just done to avoid crash if car is not updated in loop (calc all values one time)
+        car.update(0,0,0,0,0);  // just done to avoid crash if car is not updated in loop (calc all values one time)
     }
 
     private void setupLight()
@@ -230,7 +200,12 @@ public class Game implements IGameLogic {
         if(window.isKeyPressed(GLFW_KEY_R)) { directionalLightAngle += 1.0f; }
         else if(window.isKeyPressed(GLFW_KEY_F)) { directionalLightAngle -= 1.0f;}
 
-        if(window.isKeyPressed(GLFW_KEY_C))
+        if(KeyboardInput.isKeyReleased(GLFW_KEY_ESCAPE))
+        {
+            glfwSetWindowShouldClose(window.getWindowHandle(), true);
+        }
+
+        if(KeyboardInput.isKeyReleased(GLFW_KEY_C))
         {
             isFollowCam = !isFollowCam;
         }
@@ -305,10 +280,7 @@ public class Game implements IGameLogic {
         {
             totalInputCalls++;
         }
-
     }
-
-    int counter = 0;
 
     @Override
     public void update(float interval, MouseInput mouseInput)
@@ -317,10 +289,7 @@ public class Game implements IGameLogic {
         hud.updateCompass(camera.getRotation().y);
         updateDirectionalLight();
 
-        //car.update(throttleInput, brakeInput, steeringInput, gear, handbrakeInput, interval);
-        carV2.update(throttleInput, brakeInput, steeringInput, handbrakeInput, interval);
-        carV2_Mesh.setPosition(carV2.position);
-        carV2_Mesh.setRotation(carV2.rotation);
+        car.update(throttleInput, brakeInput, steeringInput, handbrakeInput, interval);
 
         Vector3f carPosition = car.position;
         Vector3f carRotation = car.rotation;
@@ -330,36 +299,36 @@ public class Game implements IGameLogic {
         float rearWheelRotation = car.rearWheelSpinAngle;
         float wheelRadius = car.wheelRadius;
         float wheelDiameter = wheelRadius * 2;
-        
+        float skidMeshesHeight = 0.05f;
         if(car.isFrontBlocking || car.isFrontSliding)
         {
-            int index = counter %= skidMeshes.length;
+            int index = skidMeshesIndexCounter %= skidMeshes.length;
             skidMeshes[index].setPosition(wheelPositions[0]);
-            skidMeshes[index].getPosition().y = 0.05f;
+            skidMeshes[index].getPosition().y = skidMeshesHeight;
             skidMeshes[index].setRotation(car.rotation);
 
-            counter++;
-            index = counter %= skidMeshes.length;
+            skidMeshesIndexCounter++;
+            index = skidMeshesIndexCounter %= skidMeshes.length;
             skidMeshes[index].setPosition(wheelPositions[1]);
-            skidMeshes[index].getPosition().y = 0.05f;
+            skidMeshes[index].getPosition().y = skidMeshesHeight;
             skidMeshes[index].setRotation(car.rotation);
         }
 
         if(car.isRearBlocking || car.isRearSliding)
         {
-            counter++;
-            int index = counter %= skidMeshes.length;
+            skidMeshesIndexCounter++;
+            int index = skidMeshesIndexCounter %= skidMeshes.length;
             skidMeshes[index].setPosition(wheelPositions[2]);
-            skidMeshes[index].getPosition().y = 0.05f;
+            skidMeshes[index].getPosition().y = skidMeshesHeight;
             skidMeshes[index].setRotation(car.rotation);
 
-            counter++;
-            index = counter %= skidMeshes.length;
+            skidMeshesIndexCounter++;
+            index = skidMeshesIndexCounter %= skidMeshes.length;
             skidMeshes[index].setPosition(wheelPositions[3]);
-            skidMeshes[index].getPosition().y = 0.05f;
+            skidMeshes[index].getPosition().y = skidMeshesHeight;
             skidMeshes[index].setRotation(car.rotation);
 
-            counter++;
+            skidMeshesIndexCounter++;
         }
 
         car_Mesh.setPosition(carPosition);
@@ -384,20 +353,11 @@ public class Game implements IGameLogic {
         rearRight_Mesh.setRotation(0, carRotation.y + 180, -rearWheelRotation);
         rearRight_Mesh.setScale(wheelDiameter);
 
-        hud.setStatusText("Speed: " + Physics.convertMPStoKMH(carV2.speed) + "KM/H");
+        hud.setStatusText("Speed: " + Physics.convertMPStoKMH(car.speed) + "KM/H");
 
         if(EngineOptions.DEBUG)
         {
             totalUpdates++;
-
-            testCube.update(interval);
-            testCubeMesh_1.setPosition(testCube.getPosition());
-
-            debugArrowRadius.setPosition(car.rearWheelsPosition);
-            debugArrowRadius.getPosition().y = 0.1f;
-            debugArrowRadius.setRotation(0, carRotation.y + 90, 0);
-            debugArrowRadius.setScale(car.turningRadius, 1, 1);
-
             hud.updateDebugHUD(car.frontCombinedForces, car.rearCombinedForces, car.maxFrontAxleForce, car.maxRearAxleForce);
         }
     }
@@ -412,10 +372,9 @@ public class Game implements IGameLogic {
 
         if(isFollowCam)
         {
-            float lerp = 1.5f;
             Vector3f position = camera.getPosition();
-            position.x += (carV2.position.x - position.x) * lerp * interval;
-            position.z += (carV2.position.z + 25 - position.z) * lerp * interval;
+            position.x += (car.position.x - position.x) * FOLLOW_CAMERA_LERP_SPEED * interval;
+            position.z += (car.position.z + FOLLOW_CAMERA_DISTANCE - position.z) * FOLLOW_CAMERA_LERP_SPEED * interval;
         }
         camera.movePosition(cameraIncrement.x * interval, cameraIncrement.y * interval, cameraIncrement.z * interval);
     }

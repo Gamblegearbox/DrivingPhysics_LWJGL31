@@ -1,11 +1,15 @@
 package engine.core;
 
 import static org.lwjgl.glfw.GLFW.*;
+
+import engine.input.KeyboardInput;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.glfw.GLFWKeyCallback;
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.glfw.GLFWWindowSizeCallback;
 import org.lwjgl.opengl.GL;
+
+import java.util.Arrays;
 
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.system.MemoryUtil.NULL;
@@ -75,16 +79,7 @@ public class Window {
         });
 
         // Setup a key callback. It will be called every time a key is pressed, repeated or released.
-        glfwSetKeyCallback(windowHandle, keyCallback = new GLFWKeyCallback()
-        {
-            @Override
-            public void invoke(long window, int key, int scancode, int action, int mods)
-            {
-                if (key == GLFW_KEY_ESCAPE && action == GLFW_RELEASE) {
-                    glfwSetWindowShouldClose(window, true);
-                }
-            }
-        });
+        glfwSetKeyCallback(windowHandle, keyCallback = new KeyboardInput());
 
         // Get the resolution of the primary monitor
         GLFWVidMode vidmode = glfwGetVideoMode(glfwGetPrimaryMonitor());
@@ -107,6 +102,7 @@ public class Window {
         // Make the window visible
         glfwShowWindow(windowHandle);
 
+        Arrays.fill(KeyboardInput.keys, KeyboardInput.IDLE_STATE); // init all keys with idle state
         GL.createCapabilities();
     }
 
@@ -148,6 +144,7 @@ public class Window {
     public void update()
     {
         glfwSwapBuffers(windowHandle);
+        KeyboardInput.update();
         glfwPollEvents();
     }
 

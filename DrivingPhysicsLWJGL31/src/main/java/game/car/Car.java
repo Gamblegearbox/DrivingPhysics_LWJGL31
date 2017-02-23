@@ -10,17 +10,14 @@ import org.joml.Vector3f;
 
 public class Car {
 
-    private final float maxSteeringAngle;
+    private final float max_steeringAngle;
     private final float wheelBase;
     private final float halfWheelBase;
     public final float halfTrackWidth;
     private final float mass;
-    private final float maxEngineForce;
     private final float maxBrakeForce;
     public final float wheelRadius;
     private final float suspensionHeight;
-    //public final float airResistance_Cw;
-    //public final float airResistance_k;
 
     public float steeringAngle;
     private float carDirectionAngle;
@@ -28,7 +25,6 @@ public class Car {
     public float rearWheelSpinAngle;
 
     public Vector3f position;
-    private Vector3f oldForward;
     public Vector3f frontWheelsPosition;
     public Vector3f rearWheelsPosition;
     public Vector3f frontWheelsForward;
@@ -41,7 +37,6 @@ public class Car {
     public Vector2f frontCombinedForces;
     public Vector2f rearCombinedForces;
 
-
     private GroundType currentGround;
     public float maxFrontAxleForce;
     public float maxRearAxleForce;
@@ -52,29 +47,42 @@ public class Car {
     public boolean isFrontSliding;
     public boolean isRearSliding;
 
+    private float cDrag;
+    private float cRoll;
     public float forwardAcceleration;
     public float forwardForce;
     public float frontForwardForce;
     public float rearForwardForce;
     public float speed;
+    public int gear;
     public float radialForce;
-    public float turningRadius;
+
+    private Engine engine;
+    private DriveTrain driveTrain;
 
     public Car()
     {
-        maxSteeringAngle = 20f;
-        wheelBase = 3.15f;
+        float[] torqueChart = new float[] {0, 395, 435, 455, 480, 470, 395, 300};           //from 0 to 7000 rpm in 1000rpm steps
+        engine = new Engine(800, 6400, torqueChart);
+        float[] gearRatios = new float[] {2.90f, 2.66f, 1.78f, 1.30f, 1.0f, 0.74f, 0.50f }; //index 0 = reverse gear
+        driveTrain = new DriveTrain(0.7f, 3.42f, gearRatios);
+
+        float cw = 0.41f;
+        float frontArea = 2.75f;
+        float airDensity = 1.29f;
+        cDrag = 0.5f * cw * frontArea * airDensity;
+
+        max_steeringAngle = 20f;
+        wheelBase = 3.2f;
         halfWheelBase = wheelBase / 2f;
-        halfTrackWidth = 0.83f;
+        halfTrackWidth = 0.785f;
 
         wheelRadius = 0.43f;
         suspensionHeight = 0.1f;
         mass = 2000;
         weightShiftModifier = 0.0f;
-        maxEngineForce = 12000;
         maxBrakeForce = 24000;
         position = new Vector3f();
-        oldForward = new Vector3f();
         frontWheelsForward = new Vector3f();
         frontWheelsLeft = new Vector3f();
         rearWheelsForward = new Vector3f();
@@ -84,13 +92,10 @@ public class Car {
         wheelPositions = new Vector3f[4];
         currentGround = getGroundType();
     }
-    int frontSlipCounter = 0;
-    int rearSlipCounter = 0;
 
-    public void update(float throttleInput, float isBrakeInput, float steeringInput, int gear, float handbrake, float interval)
+    public void update(float throttleInput, float brakeInput, float steeringInput, float handbrake, float interval)
     {
         //6 * interval IS ONE REV PER MIN ON THE WHEEL!! (6 degrees per second * 60(360 per minute) * interval)
-
         // get the current ground surface to calculate friction and stuff
         if(currentGround != getGroundType())
         {
@@ -118,57 +123,62 @@ public class Car {
         maxRearAxleForce -= temp;
         */
 
-        // use input to adjust steering and calculate force acceleration and speed in longitudinal direction
-        steeringAngle = maxSteeringAngle * steeringInput;
+        if(gear != driveTrain.getGear(speed))
+        {
+            gear = driveTrain.getGear(speed);
+            System.out.println(gear);
+        }
+        float maxTorque = getDrivingForce(2500, gear);
 
-        // calculate turning radius and radial force
-        turningRadius = Physics.calcTurningRadius(wheelBase, steeringAngle);
+        steeringAngle = steeringInput * max_steeringAngle;
+        float turningRadius = wheelBase / (float)Math.sin(Math.toRadians(steeringAngle));
         radialForce = Physics.calcRadialForce(mass, speed, turningRadius);
 
-        boolean breaking = isBrakeInput > 0 ? true : false;
+        boolean breaking = brakeInput > 0 ? true : false;
         isFrontBlocking = false;
         isRearBlocking = false;
         float rollFrictionForce = currentGround.getRollingFriction() * weightInNewton;
         float slideFrictionForce = currentGround.getSlidingFriction() * weightInNewton;
 
         // CALC FRONT AXLE FORWARD FORCE
-        frontForwardForce = (maxEngineForce * throttleInput) / 2f;
+        frontForwardForce = (maxTorque * throttleInput) * 0.5f;
         float tempForce;
         if(breaking)
         {
-            tempForce = (maxBrakeForce * isBrakeInput) /2f;
+            tempForce = (maxBrakeForce * brakeInput) * 0.5f;
             if(tempForce > maxFrontAxleForce)
             {
                 isFrontBlocking = true;
-                tempForce = slideFrictionForce / 2f;
+                tempForce = slideFrictionForce * 0.5f;
             }
         }
         else
         {
-            tempForce = rollFrictionForce / 2f;
+            tempForce = rollFrictionForce * 0.5f;
         }
         frontForwardForce -= tempForce;
 
         // CALC REAR AXLE FORWARD FORCE
-        rearForwardForce = (maxEngineForce * throttleInput) / 2f;
+        rearForwardForce = (maxTorque * throttleInput) * 0.5f;
         if(breaking)
         {
-            tempForce = (maxBrakeForce * isBrakeInput) / 2f;
+            tempForce = (maxBrakeForce * brakeInput) * 0.5f;
             if(tempForce > maxRearAxleForce)
             {
                 isRearBlocking = true;
-                tempForce = slideFrictionForce / 2f;
+                tempForce = slideFrictionForce * 0.5f;
             }
         }
         else
         {
-            tempForce = rollFrictionForce / 2f;
+            tempForce = rollFrictionForce * 0.5f;
         }
         rearForwardForce -= tempForce;
 
-        frontCombinedForces = new Vector2f(frontForwardForce, radialForce / 2f);
-        rearCombinedForces = new Vector2f(rearForwardForce, radialForce / 2f);
-        forwardForce = frontForwardForce + rearForwardForce;
+        frontCombinedForces = new Vector2f(frontForwardForce, radialForce * 0.5f);
+        rearCombinedForces = new Vector2f(rearForwardForce, radialForce * 0.5f);
+        float fDrag = -cDrag * speed * speed;
+        forwardForce = frontForwardForce + rearForwardForce + fDrag;
 
         forwardAcceleration = Physics.calcAcceleration(mass, forwardForce);
         speed += forwardAcceleration * interval;
@@ -198,20 +208,11 @@ public class Car {
         frontWheelsPosition = new Vector3f(position).add(new Vector3f(rearWheelsForward).mul(halfWheelBase));
         if(isFrontBlocking)
         {
-            frontWheelsPosition.add(new Vector3f(rearWheelsForward).mul(speed * interval));
+            frontWheelsPosition.add(new Vector3f(frontWheelsForward).mul(speed * interval));
         }
         else if(isFrontSliding)
         {
-            if(frontSlipCounter > 1)
-            {
-                frontSlipCounter = 0;
-                frontWheelsPosition.add(new Vector3f(frontWheelsForward).mul(speed * interval));
-            }
-            else
-            {
-                frontWheelsPosition.add(new Vector3f(rearWheelsForward).mul(speed * interval));
-            }
-            frontSlipCounter++;
+            frontWheelsPosition.add(new Vector3f(frontWheelsForward).mul(speed * interval));
         }
         else
         {
@@ -219,8 +220,18 @@ public class Car {
         }
 
         rearWheelsPosition = new Vector3f(position).add(new Vector3f(rearWheelsForward).mul(-halfWheelBase));
-        rearWheelsPosition.add(new Vector3f(rearWheelsForward).mul(speed * interval));
-
+        if(isRearBlocking)
+        {
+            rearWheelsPosition.add(new Vector3f(rearWheelsForward).mul(speed * interval));
+        }
+        else if(isRearSliding)
+        {
+            rearWheelsPosition.add(new Vector3f(rearWheelsForward).mul(speed * interval));
+        }
+        else
+        {
+            rearWheelsPosition.add(new Vector3f(rearWheelsForward).mul(speed * interval));
+        }
 
         Vector3f tempV = new Vector3f(frontWheelsPosition).add(rearWheelsPosition);
         tempV.div(2f);
@@ -231,28 +242,58 @@ public class Car {
         carDirectionAngle = (float) Math.toDegrees(newCarAngleInRad);
         carDirectionAngle %= 360f;
 
-        // set wheel positions
+        calcWheelPositions();
+        setWheelSpinAngle();
+        applyPositionAndFixFakeDynamics(throttleInput, brakeInput, steeringInput);
+    }
+
+    private float getDrivingForce(float rpm, int gear)
+    {
+        if(rpm < engine.idleRpm)
+        {
+            rpm = engine.idleRpm;
+        }
+        if(rpm > engine.maxRpm)
+        {
+            rpm = engine.maxRpm;
+        }
+        int index = (int)(rpm / 1000);
+
+        // interpolate torque
+        float torque_1 = engine.torqueChart[index];
+        float torque_2 = engine.torqueChart[index + 1];
+        float rpm_1 = (index) * 1000;
+        float rpm_2 = (index + 1) * 1000;
+
+        float torque = torque_1 + (((rpm - rpm_1) / (rpm_2 - rpm_1)) * (torque_2 - torque_1));
+        return torque * driveTrain.gearRatios[gear] * driveTrain.diffRatio * driveTrain.transmissionEfficiency / wheelRadius;
+    }
+
+    private GroundType getGroundType()
+    {
+        float temp = position.x;
+        GroundType result;
+
+        if(temp <= -10){ result = GroundTypes.ROAD; }
+        else if(temp > -10 && temp <= 10) {result = GroundTypes.SAND_HARD; }
+        else if(temp > 10 && temp <= 30) {result = GroundTypes.SAND_SOFT; }
+        else {result = GroundTypes.SNOW; }
+
+        return GroundTypes.ROAD;
+    }
+
+    private void calcWheelPositions()
+    {
         frontWheelsPosition.y = wheelRadius;
         rearWheelsPosition.y = wheelRadius;
         wheelPositions[0] = new Vector3f(frontWheelsPosition).add(new Vector3f(rearWheelsLeft).mul(-halfTrackWidth));
         wheelPositions[1] = new Vector3f(frontWheelsPosition).add(new Vector3f(rearWheelsLeft).mul(halfTrackWidth));
         wheelPositions[2] = new Vector3f(rearWheelsPosition).add(new Vector3f(rearWheelsLeft).mul(-halfTrackWidth));
         wheelPositions[3] = new Vector3f(rearWheelsPosition).add(new Vector3f(rearWheelsLeft).mul(halfTrackWidth));
+    }
 
-        // BEGIN PROTOTYPED STUFF
-        // Fake dynamics and wheelSpin
-        /*
-        float maxWeightShiftFrontBack = 3;
-        float maxWeightShiftLeftRight = 7;
-        float weightShiftFrontBackAngle = maxWeightShiftFrontBack * forwardForce / maxEngineForce;
-        float weightShiftLeftRightAngle = speed / 4;
-        if(weightShiftLeftRightAngle > maxWeightShiftLeftRight)
-        {
-            weightShiftLeftRightAngle = maxWeightShiftLeftRight;
-        }
-        weightShiftLeftRightAngle *= steeringInput;
-        */
-
+    private void setWheelSpinAngle()
+    {
         if(isFrontBlocking)
         {
             frontWheelSpinAngle -= 0;
@@ -270,24 +311,22 @@ public class Car {
         {
             rearWheelSpinAngle -= speed;
         }
-        //END PROTOTYPED STUFF
-
-        // Final position and rotation fixes
-        position.y = wheelRadius + suspensionHeight;
-        rotation.set(/*weightShiftLeftRightAngle*/0, -carDirectionAngle, 0/*weightShiftFrontBackAngle*/);
     }
 
-    private GroundType getGroundType()
+    private void applyPositionAndFixFakeDynamics( float throttleInput, float isBrakeInput, float steeringInput)
     {
-        float temp = position.x;
-        GroundType result;
+        float maxWeightShiftFrontBack = 3;
+        float maxWeightShiftLeftRight = 5;
+        float weightShiftFrontBackAngle = throttleInput * maxWeightShiftFrontBack - isBrakeInput * maxWeightShiftFrontBack;
+        float weightShiftLeftRightAngle = speed / 4;
+        if(weightShiftLeftRightAngle > maxWeightShiftLeftRight)
+        {
+            weightShiftLeftRightAngle = maxWeightShiftLeftRight;
+        }
+        weightShiftLeftRightAngle *= steeringInput;
 
-        if(temp <= -10){ result = GroundTypes.ROAD; }
-        else if(temp > -10 && temp <= 10) {result = GroundTypes.SAND_HARD; }
-        else if(temp > 10 && temp <= 30) {result = GroundTypes.SAND_SOFT; }
-        else {result = GroundTypes.SNOW; }
-
-        return GroundTypes.ROAD;
+        position.y = wheelRadius + suspensionHeight;
+        rotation.set(weightShiftLeftRightAngle, -carDirectionAngle, weightShiftFrontBackAngle);
     }
 
 }
