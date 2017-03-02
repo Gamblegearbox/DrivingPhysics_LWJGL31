@@ -81,42 +81,6 @@ public class CarV2 {
 
     }
 
-    private float getLateralTireForce(float slipAngle)
-    {
-        if(slipAngle > 21)
-        {
-            slipAngle = 21;
-        }
-        if(slipAngle < -21)
-        {
-            slipAngle = -21;
-        }
-        int mod = (int)(slipAngle % 3);
-        int index = (int)(slipAngle) - mod;
-        if(index < 0)
-        {
-            index = index * -1;
-        }
-
-        Map lateralForces = new HashMap<Float, Float>();// at 5KN load (500kg which is true in our case, since the car does not weight shift)
-        lateralForces.put(0,0);
-        lateralForces.put(3,6000);
-        lateralForces.put(6,5800);
-        lateralForces.put(9,5600);
-        lateralForces.put(12,5400);
-        lateralForces.put(15,5200);
-        lateralForces.put(18,5000);
-        lateralForces.put(21,4800);
-
-        // interpolate angle
-        float angle_1 = engine.torqueChart[index];
-        float angle_2 = engine.torqueChart[index + 1];
-        float force_1 = (index) * 1000;
-        float force_2 = (index + 1) * 1000;
-
-        return 0;
-    }
-
     private float getDrivingForce(float rpm, int gear)
     {
         if(rpm < engine.idleRpm)
@@ -136,7 +100,7 @@ public class CarV2 {
         float rpm_2 = (index + 1) * 1000;
 
         float torque = torque_1 + (((rpm - rpm_1) / (rpm_2 - rpm_1)) * (torque_2 - torque_1));
-        return torque * driveTrain.gearRatios[gear] * driveTrain.diffRatio * driveTrain.transmissionEfficiency / wheelRadius;
+        return torque * driveTrain.gearRatios[gear] * driveTrain.diffRatio * driveTrain.driveTrainEfficiency / wheelRadius;
     }
 
 

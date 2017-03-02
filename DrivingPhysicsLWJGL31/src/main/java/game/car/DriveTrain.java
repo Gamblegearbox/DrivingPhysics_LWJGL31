@@ -1,29 +1,29 @@
 package game.car;
 
-import engine.core.EngineOptions;
 
 public class DriveTrain {
 
-    public final float transmissionEfficiency;
+    public final float driveTrainEfficiency;
     public final float diffRatio;
     public final float[] gearRatios;
 
-    public DriveTrain(float transmissionEfficiency, float diffRatio, float[] gearRatios)
+    public DriveTrain(float driveTrainEfficiency, float diffRatio, float[] gearRatios)
     {
-        this.transmissionEfficiency = transmissionEfficiency;
+        this.driveTrainEfficiency = driveTrainEfficiency;
         this.diffRatio = diffRatio;
         this.gearRatios = gearRatios;
     }
 
-
     /**
      * @description
      * Return a suitable gear for a speed
-     * The 6.gear is usually an overdrive to save fuel.
-     * It outputs not enough torque to accelerate the car any further
-     * (at the point of automated shifting)
-     * This simple automatic gearbox will always drop back to 5th gear
-     * after shifting into the 6th because it simply delivers more torque
+     * According to the cars aerodynamics and the motor rpm it might not stay in higher gears.
+     * For example the if the 4th gear still delivers enough force to accelerate the car beyond
+     * the shifting speed (in this case 54m/s) it might not output enough torque after shifting
+     * into 5th gear.
+     * As a result the speed drops below 54m/s, the gearbox shifts back into 4th gear, accelerates,
+     * shifts up into 5th gear, and the circle repeats. (this marks the top speed for this vehicle at that rpm)
+     *
      * @param speed
      * @return gear
      */

@@ -14,7 +14,6 @@
         <lwjgl.version>3.1.1</lwjgl.version>
         <joml.version>1.9.2</joml.version>
     </properties>
-
     <profiles>
         <profile>
             <id>lwjgl-natives-linux></id>
@@ -25,7 +24,6 @@
                 <lwjgl.natives>natives-linux</lwjgl.natives>
             </properties>
         </profile>
-
         <profile>
             <id>lwjgl-natives-macos></id>
             <activation>
@@ -35,7 +33,6 @@
                 <lwjgl.natives>natives-macos</lwjgl.natives>
             </properties>
         </profile>
-
         <profile>
             <id>lwjgl-natives-windows></id>
             <activation>

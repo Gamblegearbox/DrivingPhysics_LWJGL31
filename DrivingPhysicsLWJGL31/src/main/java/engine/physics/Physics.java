@@ -27,7 +27,9 @@ public class Physics
 
     public static float calcRadialForce(float mass, float speed, float turningRadius)
     {
-        return mass * ((speed * speed) / turningRadius);
+        float result = mass * (speed * speed) / turningRadius;
+
+        return result;
     }
 
     public static float calcWeight(float mass)
