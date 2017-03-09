@@ -20,6 +20,7 @@ import engine.light.DirectionalLight;
 import engine.scene.SceneLight;
 import game.car.DriveTrain;
 import game.car.Engine;
+import game.environment.GroundType;
 import org.joml.Math;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
@@ -41,31 +42,33 @@ public class Game implements IGameLogic {
     private static final float FOLLOW_CAMERA_LERP_SPEED = 5f;
     private static final float MAX_CAMERA_DISTANCE = 100;
     private static final float MIN_CAMERA_DISTANCE = 2.5f;
-    private float followCameraDistance = 15f;
 
     private final Renderer renderer;
     private final Camera camera;
     private final Vector3f cameraIncrement;
-    private int cameraMode;
 
-    private Texture texture;
+    private GroundType road;
+    private GroundType sandHard;
+    private GroundType sandSoft;
+    private GroundType ice;
+
+    private int cameraMode;
+    private float followCameraDistance = 15f;
+
     private Car[] cars;
     private int activeCar;
 
-    private GameEntity[] skidMeshes;
-
-    private int skidMeshesIndexCounter = 0;
-
     private Vector3f lightDirection;
+    private float directionalLightAngle;
+    private boolean isNight = false;
+
     private Scene scene;
     private Hud hud;
 
-    private float directionalLightAngle;
     private float throttleInput = 0;
     private float brakeInput = 0;
     private float steeringInput = 0;
     private float handbrakeInput = 0;
-    private boolean isNight = false;
 
     //DEBUG VALUES
     private int totalUpdates = 0;
@@ -88,10 +91,7 @@ public class Game implements IGameLogic {
 
         setupGameObjects();
         setupLight();
-
-        camera.setPosition(0, followCameraDistance, 35);
-        camera.setRotation(45,0,0);
-        cameraMode = 0;
+        setupCamera();
         setupHUD();
 
         if(EngineOptions.DEBUG)
@@ -102,17 +102,20 @@ public class Game implements IGameLogic {
 
     private void setupGameObjects() throws Exception
     {
+        ArrayList<GameEntity> gameEntities = new ArrayList<>();
+
         // load color palette and apply it to material
-        texture = new Texture("/textures/colorsFromPicture.png");
+        Texture texture = new Texture("/textures/colorsFromPicture.png");
         Material material = new Material(texture, 0f);
 
-        // create ground
+        // create ground plane
         Mesh mesh = OBJLoader.loadMesh("/models/GroundPlane.obj");
         mesh.setMaterial(material);
         GameEntity ground = new GameEntity(mesh);
         ground.setPosition(0, 0, 0);
+        gameEntities.add(ground);
 
-        // create offroad, axles and wheels
+        // create offroad car meshes
         mesh = OBJLoader.loadMesh("/models/Car_Offroad.obj");
         mesh.setMaterial(material);
         GameEntity car_Mesh_Offroad = new GameEntity(mesh);
@@ -129,7 +132,14 @@ public class Game implements IGameLogic {
         GameEntity rearRight_Mesh_Offroad = new GameEntity(mesh);
         GameEntity[] meshes_Offroad = new GameEntity[]{ car_Mesh_Offroad, axle_Mesh_Offroad, frontLeft_Mesh_Offroad, frontRight_Mesh_Offroad, rearLeft_Mesh_Offroad, rearRight_Mesh_Offroad };
 
-        // create sport, axles and wheels
+        gameEntities.add(car_Mesh_Offroad);
+        gameEntities.add(axle_Mesh_Offroad);
+        gameEntities.add(frontLeft_Mesh_Offroad);
+        gameEntities.add(frontRight_Mesh_Offroad);
+        gameEntities.add(rearLeft_Mesh_Offroad);
+        gameEntities.add(rearRight_Mesh_Offroad);
+
+        // create sport car meshes
         mesh = OBJLoader.loadMesh("/models/Car_Sport.obj");
         mesh.setMaterial(material);
         GameEntity car_Mesh_Sport = new GameEntity(mesh);
@@ -148,29 +158,6 @@ public class Game implements IGameLogic {
         GameEntity rearRight_Mesh_Sport = new GameEntity(mesh);
         GameEntity[] meshes_Sport = new GameEntity[]{ car_Mesh_Sport, axle_Mesh_Sport, frontLeft_Mesh_Sport, frontRight_Mesh_Sport, rearLeft_Mesh_Sport, rearRight_Mesh_Sport };
 
-        // create effect meshes
-        skidMeshes = new GameEntity[1000];
-        mesh = DebugMeshes.buildQuad();
-        mesh.setMaterial(Materials.WHITE);
-
-        for(int i = 0; i < skidMeshes.length; i++)
-        {
-            skidMeshes[i] = new GameEntity(mesh);
-            skidMeshes[i].setScale(0.5f, 1f, 0.5f);
-            skidMeshes[i].getPosition().y = -1f;
-        }
-
-        // add objects to List of GameItems
-        ArrayList<GameEntity> gameEntities = new ArrayList<>();
-        gameEntities.add(ground);
-
-        gameEntities.add(car_Mesh_Offroad);
-        gameEntities.add(axle_Mesh_Offroad);
-        gameEntities.add(frontLeft_Mesh_Offroad);
-        gameEntities.add(frontRight_Mesh_Offroad);
-        gameEntities.add(rearLeft_Mesh_Offroad);
-        gameEntities.add(rearRight_Mesh_Offroad);
-
         gameEntities.add(car_Mesh_Sport);
         gameEntities.add(axle_Mesh_Sport);
         gameEntities.add(frontLeft_Mesh_Sport);
@@ -178,16 +165,50 @@ public class Game implements IGameLogic {
         gameEntities.add(rearLeft_Mesh_Sport);
         gameEntities.add(rearRight_Mesh_Sport);
 
-        for(int i = 0; i < skidMeshes.length; i++)
+        // create effect meshes
+        GameEntity[] skidMeshesRoad = new GameEntity[500];
+        GameEntity[] skidMeshesIce = new GameEntity[500];
+        GameEntity[] skidMeshesSand = new GameEntity[500];
+        Mesh meshSkidRoad = DebugMeshes.buildQuad();
+        meshSkidRoad.setMaterial(Materials.DARK_GREY);
+        Mesh meshSkidSand = DebugMeshes.buildQuad();
+        meshSkidSand.setMaterial(Materials.BROWN);
+        Mesh meshSkidIce = DebugMeshes.buildQuad();
+        meshSkidIce.setMaterial(Materials.WHITE);
+
+        for(int i = 0; i < skidMeshesRoad.length; i++)
         {
-            gameEntities.add(skidMeshes[i]);
+            skidMeshesRoad[i] = new GameEntity(meshSkidRoad);
+            skidMeshesRoad[i].setScale(0.5f, 1f, 0.5f);
+            skidMeshesRoad[i].getPosition().y = -1f;
+            gameEntities.add(skidMeshesRoad[i]);
         }
+
+        for(int i = 0; i < skidMeshesSand.length; i++)
+        {
+            skidMeshesSand[i] = new GameEntity(meshSkidSand);
+            skidMeshesSand[i].setScale(0.5f, 1f, 0.5f);
+            skidMeshesSand[i].getPosition().y = -1f;
+            gameEntities.add(skidMeshesSand[i]);
+        }
+
+        for(int i = 0; i < skidMeshesIce.length; i++)
+        {
+            skidMeshesIce[i] = new GameEntity(meshSkidIce);
+            skidMeshesIce[i].setScale(0.5f, 1f, 0.5f);
+            skidMeshesIce[i].getPosition().y = -1f;
+            gameEntities.add(skidMeshesIce[i]);
+        }
+
+        road = new GroundType("road", 0.013f, 0.5f, 0.8f, skidMeshesRoad);
+        sandHard = new GroundType("sandHard", 0.08f, 0.25f, 0.4f, skidMeshesSand);
+        sandSoft = new GroundType("sandSoft", 0.2f, 0.5f, 0.6f, skidMeshesSand);
+        ice = new GroundType("ice", 0.015f, 0.05f, 0.10f, skidMeshesIce);
 
         if(EngineOptions.DEBUG)
         {
             // use this section to create and add gameItem for debug purposes
         }
-
         // add objects to scene and cars
         scene.setGameItems(gameEntities);
 
@@ -203,12 +224,17 @@ public class Game implements IGameLogic {
         float[] gearRatios_Sport = new float[] {-2.13f, 2.27f, 1.77f, 1.31f, 0.99f, 0.78f, 0.78f };   //index 0 = reverse gear
         DriveTrain driveTrain_Sport = new DriveTrain(0.7f, 4.09f, gearRatios_Sport);
 
-        Car car_Offroad = new Car(0.41f, 2.75f, 30f, 3.2f, 1.57f, 1.57f,0.1f, 2000f, 0.43f, new Vector3f(0, 0, -2.5f), engine_Offroad, driveTrain_Offroad, meshes_Offroad);
-        Car car_Sport = new Car(0.42f, 1.86f, 30f, 2.45f, 1.532f, 1.606f,-0.15f, 1490, 0.3f,new Vector3f(0,0, 2.5f), engine_Sport, driveTrain_Sport, meshes_Sport);
+        Car car_Offroad = new Car(0.41f, 2.75f, 32.5f, 3.2f,
+                1.57f, 0.1f, 2450, 0.43f,
+                new Vector3f(0, 0, -2.5f), engine_Offroad, driveTrain_Offroad, meshes_Offroad, true, true);
+        Car car_Sport = new Car(0.42f, 1.95f, 28.5f, 2.45f,
+                1.6f, -0.15f, 1490, 0.3f,
+                new Vector3f(0,0, 2.5f), engine_Sport, driveTrain_Sport, meshes_Sport, false, true);
         cars = new Car[] {car_Offroad, car_Sport};
 
         for(int i = 0; i < cars.length; i++)
         {
+            cars[i].setGroundType(road);
             cars[i].update(0,0,0,0,0);
             cars[i].update(0,0,0,0,0);
         }
@@ -230,6 +256,13 @@ public class Game implements IGameLogic {
     private void setupHUD() throws Exception
     {
         hud = new Hud("");
+    }
+
+    private void setupCamera()
+    {
+        camera.setPosition(0, followCameraDistance, followCameraDistance);
+        camera.setRotation(45,0,0);
+        cameraMode = 0;
     }
 
     @Override
@@ -372,52 +405,17 @@ public class Game implements IGameLogic {
     @Override
     public void update(float interval, MouseInput mouseInput)
     {
+        Car car = cars[activeCar];
         updateCamera(mouseInput, interval);
         hud.updateCompass(camera.getRotation().y);
         updateDirectionalLight();
 
-
+        float xPosition = car.getPosition().x;
+        if(xPosition <= -250){ car.setGroundType(ice); }
+        else if(xPosition > -250 && xPosition <= 25) {car.setGroundType(road); }
+        else if(xPosition > 25 && xPosition <= 250) {car.setGroundType(sandHard); }
+        else {car.setGroundType(sandSoft); }
         cars[activeCar].update(throttleInput, brakeInput, steeringInput, handbrakeInput, interval);
-
-        Vector3f[] wheelPositions = cars[activeCar].wheelPositions;
-        Vector3f carYRotation = cars[activeCar].getRotation();
-
-        float skidMeshesHeight = 0.05f;
-        GameEntity skidMesh;
-        if(cars[activeCar].isFrontBlocking || cars[activeCar].isFrontSliding)
-        {
-            int index = skidMeshesIndexCounter %= skidMeshes.length;
-            skidMesh = skidMeshes[index];
-            skidMesh.setPosition(wheelPositions[0]);
-            skidMesh.getPosition().y = skidMeshesHeight;
-            skidMesh.setRotation(carYRotation);
-
-            skidMeshesIndexCounter++;
-            index = skidMeshesIndexCounter %= skidMeshes.length;
-            skidMesh = skidMeshes[index];
-            skidMesh.setPosition(wheelPositions[1]);
-            skidMesh.getPosition().y = skidMeshesHeight;
-            skidMesh.setRotation(carYRotation);
-        }
-
-        if(cars[activeCar].isRearBlocking || cars[activeCar].isRearSliding)
-        {
-            skidMeshesIndexCounter++;
-            int index = skidMeshesIndexCounter %= skidMeshes.length;
-            skidMesh = skidMeshes[index];
-            skidMesh.setPosition(wheelPositions[2]);
-            skidMesh.getPosition().y = skidMeshesHeight;
-            skidMesh.setRotation(carYRotation);
-
-            skidMeshesIndexCounter++;
-            index = skidMeshesIndexCounter %= skidMeshes.length;
-            skidMesh = skidMeshes[index];
-            skidMesh.setPosition(wheelPositions[3]);
-            skidMesh.getPosition().y = skidMeshesHeight;
-            skidMesh.setRotation(carYRotation);
-
-            skidMeshesIndexCounter++;
-        }
 
         hud.setStatusText("Speed: " + Physics.convertMPStoKMH(cars[activeCar].speed) + "KM/H");
 
@@ -436,7 +434,7 @@ public class Game implements IGameLogic {
             camera.moveRotation(rotVec.x * MOUSE_SENSITIVITY, rotVec.y * MOUSE_SENSITIVITY, 0);
         }
 
-        if(cameraMode > 0)
+        if(cameraMode == 1)
         {
             Vector3f position = camera.getPosition();
             Vector3f carPosition = cars[activeCar].getPosition();

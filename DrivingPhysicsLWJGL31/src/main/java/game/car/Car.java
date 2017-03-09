@@ -4,7 +4,6 @@ import engine.core.EngineOptions;
 import engine.gameEntities.GameEntity;
 import engine.physics.Physics;
 import game.environment.GroundType;
-import game.environment.GroundTypes;
 import org.joml.Math;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
@@ -12,23 +11,23 @@ import org.joml.Vector3f;
 public class Car {
 
     private final GameEntity[] gameEntities;
-    private final float max_steeringAngle;
+    private final float maxSteeringAngle;
     private final float wheelBase;
     private final float halfWheelBase;
-    private final float halfTrackWidthFront;
-    private final float halfTrackWidthRear;
+    private final float halfTrackWidth;
     private final float mass;
     private final float maxBrakeForce;
     private final float wheelRadius;
-    private final float suspensionOffset;
     private final float wheelDiameter;
+    private final float suspensionOffset;
     private final Engine engine;
     private final DriveTrain driveTrain;
+    private final boolean isFrontAxlePowered;
+    private final boolean isRearAxlePowered;
 
     private float carDirectionAngle;
     private float frontWheelSpinAngle;
     private float rearWheelSpinAngle;
-    private float lateralForce;
 
     private Vector3f frontWheelsPosition;
     private Vector3f rearWheelsPosition;
@@ -40,58 +39,64 @@ public class Car {
     private Vector3f rotation;
     private Vector3f frontSlideDirection;
     private Vector3f rearSlideDirection;
+
     private GroundType currentGround;
-    private float weightShiftModifier;
+    private GameEntity[] currentSkidMeshes;
+    private int skidMeshesIndexCounter = 0;
 
     private Vector3f position;
     public Vector2f frontCombinedForces;
     public Vector2f rearCombinedForces;
     public float maxFrontAxleForce;
     public float maxRearAxleForce;
-    public Vector3f[] wheelPositions;
-    public boolean isFrontBlocking;
-    public boolean isRearBlocking;
-    public boolean isFrontSliding;
-    public boolean isRearSliding;
+    private Vector3f[] wheelPositions;
+    private boolean isFrontBlocking;
+    private boolean isRearBlocking;
+    private boolean isFrontSliding;
+    private boolean isRearSliding;
+    private boolean isFrontSpinning;
+    private boolean isRearSpinning;
 
     private float cDrag;
-    private float forwardAcceleration;
-    private float forwardForce;
-    private float frontForwardForce;
-    private float rearForwardForce;
     public float speed;
     private float slideSpeed;
-    private int gear;
+    private float weightInNewton;
+    private float rollFrictionForce;
+    private float slideFrictionForce;
 
 
-
-    public Car(float cw, float frontArea, float max_steeringAngle, float wheelBase,
-               float trackWidthFront, float trackwidthRear, float suspensionOffset,
+    public Car(float cw, float frontArea, float maxSteeringAngle, float wheelBase,
+               float trackWidth, float suspensionOffset,
                float mass, float wheelRadius, Vector3f position, Engine engine,
-               DriveTrain driveTrain, GameEntity[] gameEntities)
+               DriveTrain driveTrain, GameEntity[] gameEntities, boolean isFrontAxlePowered, boolean isRearAxlePowered)
     {
-        this.gameEntities = gameEntities;
-        this.engine = engine;
-        this.driveTrain = driveTrain;
-
-        float airDensity = 1.29f;
+        float airDensity = 1.23f;
         cDrag = 0.5f * cw * frontArea * airDensity;
 
-        this.max_steeringAngle = max_steeringAngle;
+        this.maxSteeringAngle = maxSteeringAngle;
+
         this.wheelBase = wheelBase;
         halfWheelBase = wheelBase / 2f;
 
-        halfTrackWidthFront = trackWidthFront / 2f;
-        halfTrackWidthRear = trackwidthRear / 2f;
+        halfTrackWidth = trackWidth / 2f;
 
         this.wheelRadius = wheelRadius;
         wheelDiameter = wheelRadius * 2f;
 
         this.suspensionOffset = suspensionOffset;
+
         this.mass = mass;
-        weightShiftModifier = 0.0f;
-        maxBrakeForce = 24000;
+        weightInNewton = mass * Physics.G;
+
         this.position = new Vector3f(position);
+        this.gameEntities = gameEntities;
+        this.engine = engine;
+        this.driveTrain = driveTrain;
+
+        this.isFrontAxlePowered = isFrontAxlePowered;
+        this.isRearAxlePowered = isRearAxlePowered;
+
+        maxBrakeForce = mass * 10;
         frontWheelsForward = new Vector3f();
         frontWheelsLeft = new Vector3f();
         rearWheelsForward = new Vector3f();
@@ -103,51 +108,72 @@ public class Car {
         isFrontSliding = false;
         isRearSliding = false;
         wheelPositions = new Vector3f[4];
-        currentGround = getGroundType();
     }
 
     public void update(float throttleInput, float brakeInput, float steeringInput, float handbrake, float interval)
     {
-        float steeringAngle;
-        // get the current ground surface to calculate friction and stuff
-        if(currentGround != getGroundType())
-        {
-            currentGround = getGroundType();
-            if(EngineOptions.DEBUG)
-            {
-                System.out.println(currentGround.getType());
-                System.out.println("C_ROLL: " + currentGround.getRollingFriction());
-                System.out.println("U_SLIDE: " + currentGround.getSlidingFriction());
-                System.out.println("U_STATIC: " + currentGround.getStaticFriction());
-                System.out.println();
-            }
-        }
-
-        // calculate maximum force the axles can put on the current ground
-        float weightInNewton = mass * Physics.G;
-        maxFrontAxleForce = currentGround.getStaticFriction() * (weightInNewton * 0.5f);
-        maxRearAxleForce = currentGround.getStaticFriction() * (weightInNewton * 0.5f);
-        float rollFrictionForce = currentGround.getRollingFriction() * weightInNewton;
-        float slideFrictionForce = currentGround.getSlidingFriction() * weightInNewton;
-
         // weight shift modifier
         /*
-        weightShiftModifier = (-throttleInput + brakeInput) * 0.5f;
+        float weightShiftModifier = (-throttleInput + brakeInput) * 0.5f;
         float temp = maxFrontAxleForce * weightShiftModifier;
         maxFrontAxleForce += temp;
         maxRearAxleForce -= temp;
         */
 
-        gear = driveTrain.getGear(speed);
+        int gear = driveTrain.getGear(speed);
         float maxTorque = getDrivingForce(5000, gear);
 
-        boolean breaking = brakeInput > 0 ? true : false;
+        boolean breaking = brakeInput > 0;
         isFrontBlocking = false;
         isRearBlocking = false;
 
-        // CALC FRONT AXLE FORWARD FORCE
-        frontForwardForce = (maxTorque * throttleInput) * 0.5f;
+        // CALC AXLE FORWARD FORCES
+        isFrontSpinning = false;
+        isRearSpinning = false;
+        float frontForwardForce = 0;
+        float rearForwardForce = 0;
         float tempForce;
+        float motorForce = (maxTorque * throttleInput);
+        if(isFrontAxlePowered && isRearAxlePowered)
+        {
+            if(motorForce > maxFrontAxleForce + maxRearAxleForce)
+            {
+                isFrontSpinning = true;
+                isRearSpinning = true;
+                frontForwardForce = slideFrictionForce  * 0.5f;
+                rearForwardForce = slideFrictionForce * 0.5f;
+            }
+            else
+            {
+                frontForwardForce = motorForce * 0.5f;
+                rearForwardForce = motorForce * 0.5f;
+            }
+        }
+        else if(isFrontAxlePowered)
+        {
+            if(motorForce > maxFrontAxleForce)
+            {
+                isFrontSpinning = true;
+                frontForwardForce = slideFrictionForce * 0.5f;
+            }
+            else
+            {
+                frontForwardForce = (maxTorque * throttleInput);
+            }
+        }
+        else if(isRearAxlePowered)
+        {
+            if(motorForce > maxRearAxleForce)
+            {
+                isRearSpinning = true;
+                rearForwardForce = slideFrictionForce * 0.5f;
+            }
+            else
+            {
+                rearForwardForce = (maxTorque * throttleInput);
+            }
+        }
+
         if(breaking && !isFrontSliding)
         {
             tempForce = (maxBrakeForce * brakeInput) * 0.5f;
@@ -167,8 +193,6 @@ public class Car {
         }
         frontForwardForce -= tempForce;
 
-        // CALC REAR AXLE FORWARD FORCE
-        rearForwardForce = (maxTorque * throttleInput) * 0.5f;
         if(breaking && !isRearSliding)
         {
             tempForce = (maxBrakeForce * brakeInput) * 0.5f;
@@ -190,9 +214,9 @@ public class Car {
         rearForwardForce -= tempForce;
 
         float fDrag = -cDrag * speed * speed;
-        forwardForce = frontForwardForce + rearForwardForce + fDrag;
+        float forwardForce = frontForwardForce + rearForwardForce + fDrag;
 
-        forwardAcceleration = forwardForce / mass;
+        float forwardAcceleration = forwardForce / mass;
         speed += forwardAcceleration * interval;
 
         if(isFrontSliding || isRearSliding)
@@ -219,26 +243,27 @@ public class Car {
             rearSlideDirection = null;
         }
 
-        if(speed < 0.00001f)
+        float steeringAngle;
+        if(speed < 0.00001f || slideSpeed > 0.00001f)
         {
-            steeringAngle = steeringInput * max_steeringAngle;
+            steeringAngle = steeringInput * maxSteeringAngle;
         }
         else
         {
             steeringAngle = (1511.5069f * (float) java.lang.Math.pow(speed, -2.0173f)) * currentGround.getStaticFriction() * steeringInput;
-            if(steeringAngle > max_steeringAngle)
+            if(steeringAngle > maxSteeringAngle)
             {
-                steeringAngle = max_steeringAngle;
+                steeringAngle = maxSteeringAngle;
             }
-            if(steeringAngle < -max_steeringAngle)
+            if(steeringAngle < -maxSteeringAngle)
             {
-                steeringAngle = -max_steeringAngle;
+                steeringAngle = -maxSteeringAngle;
             }
         }
 
         float turnRadius = wheelBase / (float)Math.sin(Math.toRadians(steeringAngle));
         float lateralAcceleration = (speed * speed) / turnRadius;
-        lateralForce = mass * lateralAcceleration;
+        float lateralForce = mass * lateralAcceleration;
 
         frontCombinedForces = new Vector2f(frontForwardForce, -lateralForce / 2f);
         rearCombinedForces = new Vector2f(rearForwardForce, -lateralForce / 2f);
@@ -308,10 +333,10 @@ public class Car {
         carDirectionAngle %= 360f;
 
         calcWheelPositions();
-        setWheelSpinAngle(interval);
+        setWheelSpinAngle();
         applyPositionAndFixFakeDynamics(throttleInput, brakeInput, steeringInput);
-
         updateVisuals(steeringAngle);
+        updateGroundEffects();
     }
 
     private float getDrivingForce(float rpm, int gear)
@@ -332,41 +357,57 @@ public class Car {
         float rpm_1 = (index) * 1000;
         float rpm_2 = (index + 1) * 1000;
 
-        System.out.println(torque_1 + " / " + torque_2);
-
         float torque = torque_1 + (((rpm - rpm_1) / (rpm_2 - rpm_1)) * (torque_2 - torque_1));
 
         return torque * driveTrain.gearRatios[gear] * driveTrain.diffRatio * driveTrain.driveTrainEfficiency / wheelRadius;
     }
 
-    private GroundType getGroundType()
+    public void setGroundType(GroundType groundType)
     {
-        float xPosition = position.x;
-        GroundType result;
+        // get the current ground surface to calculate friction forces
+        if(currentGround != groundType)
+        {
+            currentGround = groundType;
+            currentSkidMeshes = groundType.getSkidMeshes();
 
-        if(xPosition <= -250){ result = GroundTypes.ICE; }
-        else if(xPosition > -250 && xPosition <= 25) {result = GroundTypes.ROAD; }
-        else if(xPosition > 25 && xPosition <= 250) {result = GroundTypes.SAND_HARD; }
-        else {result = GroundTypes.SAND_SOFT; }
+            // calculate maximum force the axles can put on the current ground
+            maxFrontAxleForce = currentGround.getStaticFriction() * (weightInNewton * 0.5f);
+            maxRearAxleForce = currentGround.getStaticFriction() * (weightInNewton * 0.5f);
+            rollFrictionForce = currentGround.getRollingFriction() * weightInNewton;
+            slideFrictionForce = currentGround.getSlidingFriction() * weightInNewton;
 
-        return result;
+            if(EngineOptions.DEBUG)
+            {
+                System.out.println("Current ground type: " + currentGround.getType());
+                System.out.println("C_ROLL: " + currentGround.getRollingFriction());
+                System.out.println("U_SLIDE: " + currentGround.getSlidingFriction());
+                System.out.println("U_STATIC: " + currentGround.getStaticFriction());
+                System.out.println();
+            }
+        }
     }
 
     private void calcWheelPositions()
     {
         frontWheelsPosition.y = wheelRadius;
         rearWheelsPosition.y = wheelRadius;
-        wheelPositions[0] = new Vector3f(frontWheelsPosition).add(new Vector3f(rearWheelsLeft).mul(halfTrackWidthFront));
-        wheelPositions[1] = new Vector3f(frontWheelsPosition).add(new Vector3f(rearWheelsLeft).mul(-halfTrackWidthFront));
-        wheelPositions[2] = new Vector3f(rearWheelsPosition).add(new Vector3f(rearWheelsLeft).mul(halfTrackWidthRear));
-        wheelPositions[3] = new Vector3f(rearWheelsPosition).add(new Vector3f(rearWheelsLeft).mul(-halfTrackWidthRear));
+        wheelPositions[0] = new Vector3f(frontWheelsPosition).add(new Vector3f(rearWheelsLeft).mul(halfTrackWidth));
+        wheelPositions[1] = new Vector3f(frontWheelsPosition).add(new Vector3f(rearWheelsLeft).mul(-halfTrackWidth));
+        wheelPositions[2] = new Vector3f(rearWheelsPosition).add(new Vector3f(rearWheelsLeft).mul(halfTrackWidth));
+        wheelPositions[3] = new Vector3f(rearWheelsPosition).add(new Vector3f(rearWheelsLeft).mul(-halfTrackWidth));
     }
 
-    private void setWheelSpinAngle(float interval)
+    private void setWheelSpinAngle()
     {
+        float fakeWheelSpinAngle = 20f;
+
         if(isFrontBlocking)
         {
             frontWheelSpinAngle -= 0;
+        }
+        else if(isFrontSpinning)
+        {
+            frontWheelSpinAngle -= fakeWheelSpinAngle;
         }
         else
         {
@@ -377,6 +418,10 @@ public class Car {
         {
             rearWheelSpinAngle -= 0;
         }
+        else if(isRearSpinning)
+        {
+            rearWheelSpinAngle -= fakeWheelSpinAngle;
+        }
         else
         {
             rearWheelSpinAngle -= speed;
@@ -385,7 +430,7 @@ public class Car {
 
     private void applyPositionAndFixFakeDynamics( float throttleInput, float isBrakeInput, float steeringInput)
     {
-        float maxWeightShiftFrontBack = 3 * mass * 0.001f * 0.5f;
+        float maxWeightShiftFrontBack = 2 * mass * 0.001f * 0.5f;
         float maxWeightShiftLeftRight = 4 * mass * 0.001f * 0.5f;
         float weightShiftFrontBackAngle = throttleInput * maxWeightShiftFrontBack - isBrakeInput * maxWeightShiftFrontBack;
         float weightShiftLeftRightAngle = speed / 4;
@@ -433,13 +478,50 @@ public class Car {
         carPart.setScale(wheelDiameter);
     }
 
+    private void updateGroundEffects()
+    {
+        float skidMeshesHeight = 0.05f;
+        GameEntity skidMesh;
+        if(isFrontBlocking || isFrontSliding || isFrontSpinning)
+        {
+            int index = skidMeshesIndexCounter %= currentSkidMeshes.length;
+            skidMesh = currentSkidMeshes[index];
+            skidMesh.setPosition(wheelPositions[0]);
+            skidMesh.getPosition().y = skidMeshesHeight;
+            skidMesh.setRotation(rotation);
+
+            skidMeshesIndexCounter++;
+            index = skidMeshesIndexCounter %= currentSkidMeshes.length;
+            skidMesh = currentSkidMeshes[index];
+            skidMesh.setPosition(wheelPositions[1]);
+            skidMesh.getPosition().y = skidMeshesHeight;
+            skidMesh.setRotation(rotation);
+        }
+
+        if(isRearBlocking || isRearSliding || isRearSpinning)
+        {
+            skidMeshesIndexCounter++;
+            int index = skidMeshesIndexCounter %= currentSkidMeshes.length;
+            skidMesh = currentSkidMeshes[index];
+            skidMesh.setPosition(wheelPositions[2]);
+            skidMesh.getPosition().y = skidMeshesHeight;
+            skidMesh.setRotation(rotation);
+
+            skidMeshesIndexCounter++;
+            index = skidMeshesIndexCounter %= currentSkidMeshes.length;
+            skidMesh = currentSkidMeshes[index];
+            skidMesh.setPosition(wheelPositions[3]);
+            skidMesh.getPosition().y = skidMeshesHeight;
+            skidMesh.setRotation(rotation);
+
+            skidMeshesIndexCounter++;
+        }
+    }
+
     public Vector3f getPosition()
     {
         return position;
     }
 
-    public Vector3f getRotation()
-    {
-        return rotation;
-    }
 }
+

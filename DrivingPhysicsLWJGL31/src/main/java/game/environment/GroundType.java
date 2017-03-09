@@ -1,19 +1,23 @@
 package game.environment;
 
 
+import engine.gameEntities.GameEntity;
+
 public class GroundType {
 
     private final String type;
     private final float rollingFriction;
     private final float slidingFriction;
     private final float staticFriction;
+    private final GameEntity[] skidMeshes;
 
-    public GroundType(String type, float rollingFriction, float slidingFriction, float staticFriction )
+    public GroundType(String type, float rollingFriction, float slidingFriction, float staticFriction, GameEntity[] skidMeshes)
     {
         this.type = type;
         this.rollingFriction = rollingFriction;
         this.slidingFriction = slidingFriction;
         this.staticFriction = staticFriction;
+        this.skidMeshes = skidMeshes;
     }
 
     public String getType()
@@ -35,4 +39,10 @@ public class GroundType {
     {
         return staticFriction;
     }
+
+    public GameEntity[] getSkidMeshes()
+    {
+        return skidMeshes;
+    }
+
 }
