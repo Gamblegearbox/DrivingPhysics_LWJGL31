@@ -417,7 +417,7 @@ public class Game implements IGameLogic {
         else {car.setGroundType(sandSoft); }
         cars[activeCar].update(throttleInput, brakeInput, steeringInput, handbrakeInput, interval);
 
-        hud.setStatusText("Speed: " + Physics.convertMPStoKMH(cars[activeCar].speed) + "KM/H");
+        hud.setStatusText("Speed: " + (int)Physics.convertMPStoKMH(cars[activeCar].getSpeed()) + "KM/H // CameraMode: c // Active Car: v");
 
         if(EngineOptions.DEBUG)
         {
