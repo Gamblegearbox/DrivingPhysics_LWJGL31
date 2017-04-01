@@ -2,8 +2,8 @@ package game;
 
 import engine.core.EngineOptions;
 import engine.core.GameEngine;
-import engine.core.Window;
 import engine.interfaces.IGameLogic;
+
 
 public class Main {
 

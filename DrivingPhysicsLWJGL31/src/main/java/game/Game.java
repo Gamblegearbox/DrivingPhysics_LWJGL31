@@ -12,6 +12,7 @@ import engine.scene.Scene;
 import engine.shading.Material;
 import engine.texture.Texture;
 import engine.input.MouseInput;
+import engine.utils.Conversions;
 import engine.utils.DebugMeshes;
 import engine.utils.OBJLoader;
 import engine.physics.Physics;
@@ -236,7 +237,7 @@ public class Game implements IGameLogic {
         {
             cars[i].setGroundType(road);
             cars[i].update(0,0,0,0,0);
-            cars[i].update(0,0,0,0,0);
+            cars[i].update(0,0,0,0,0); //TODO: somehow the wheels are not in the right place after first update
         }
         activeCar = 0;
     }
@@ -416,8 +417,8 @@ public class Game implements IGameLogic {
         else if(xPosition > 25 && xPosition <= 250) {car.setGroundType(sandHard); }
         else {car.setGroundType(sandSoft); }
         cars[activeCar].update(throttleInput, brakeInput, steeringInput, handbrakeInput, interval);
-
-        hud.setStatusText("Speed: " + (int)Physics.convertMPStoKMH(cars[activeCar].getSpeed()) + "KM/H // CameraMode: c // Active Car: v");
+        cars[1].update(0, 0, steeringInput, handbrakeInput, interval);
+        hud.setStatusText("Speed: " + (int) Conversions.convertMPStoKMH(cars[activeCar].getSpeed()) + "KM/H // CameraMode: c // Switch Car: v");
 
         if(EngineOptions.DEBUG)
         {

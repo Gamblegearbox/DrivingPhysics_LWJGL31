@@ -8,6 +8,22 @@ import org.joml.Math;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 
+/*--------------------------------------------------------- *
+* CAR CONTROLS                                              *
+* Arrow keys:           control the active car              *
+* v:                    switch active car                   *
+* --------------------------------------------------------- *
+* CAMERA CONTROLS                                           *
+* Right mouse button + move mouse rotates the camera        *
+* W,S,A,D:              move camera in x and z direction    *
+* shift + WSAD:         fast camera movement                *
+* Q,E:                  lower or raise camera               *
+* R,F:                  change distance of follow cam       *
+* c:                    switch camera mode                  *
+* --------------------------------------------------------- *
+* OTHER CONTROLS:                                           *
+* 1,2:                  change directional light angle      *
+* ---------------------------------------------------------*/
 public class Car {
 
     private final GameEntity[] gameEntities;
@@ -291,8 +307,9 @@ public class Car {
         frontCombinedForces = new Vector2f(frontForwardForce, -lateralForce * 0.5f);
         rearCombinedForces = new Vector2f(rearForwardForce, -lateralForce * 0.5f);
 
+        /*
         float gierRate;
-        if(speed < 0.0001)
+        if(speed < 0.0001f)
         {
             gierRate = 0.0f;
         }
@@ -300,6 +317,7 @@ public class Car {
         {
             gierRate = speed / turnRadius;
         }
+        */
 
         float carRotationDegToRad = (float)Math.toRadians(carDirectionAngle);
         float carRotationInclSteeringDegToRad = (float)Math.toRadians(carDirectionAngle - steeringAngle);
@@ -356,10 +374,6 @@ public class Car {
         {
             rearWheelsPosition.add(new Vector3f(rearWheelsForward).mul(speed * interval));
         }
-
-        Vector3f tempV = new Vector3f(frontWheelsPosition).add(rearWheelsPosition);
-        tempV.div(2f);
-        position = new Vector3f(tempV);
 
         // set car angles
         float newCarAngleInRad = (float)Math.atan2(frontWheelsPosition.z - rearWheelsPosition.z, frontWheelsPosition.x - rearWheelsPosition.x);
@@ -467,6 +481,7 @@ public class Car {
 
     private void applyPositionRotationAndFakeDynamics(float throttleInput, float isBrakeInput, float steeringInput)
     {
+        // the values here are still experimental, that why they are not written into variables
         float maxWeightShiftFrontBack = 2 * mass * 0.001f * 0.5f;
         float maxWeightShiftLeftRight = 4 * mass * 0.001f * 0.5f;
         float weightShiftFrontBackAngle = throttleInput * maxWeightShiftFrontBack - isBrakeInput * maxWeightShiftFrontBack;
@@ -476,6 +491,10 @@ public class Car {
             weightShiftLeftRightAngle = maxWeightShiftLeftRight;
         }
         weightShiftLeftRightAngle *= steeringInput;
+
+        Vector3f tempV = new Vector3f(frontWheelsPosition).add(rearWheelsPosition);
+        tempV.div(2f);
+        position = new Vector3f(tempV);
 
         position.y = wheelRadius + suspensionOffset;
         rotation.set(weightShiftLeftRightAngle, -carDirectionAngle, weightShiftFrontBackAngle);
